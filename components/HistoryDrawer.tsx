@@ -1,0 +1,160 @@
+import React, { useState } from 'react';
+import { X, Archive, Trash2, RotateCcw, Clock, ArrowUpDown, FileText, ChevronRight } from 'lucide-react';
+import { SavedItem } from '../types';
+
+interface HistoryDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  items: SavedItem[];
+  onRestore: (item: SavedItem) => void;
+  onDeleteForever: (id: string) => void;
+}
+
+export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({ 
+  isOpen, 
+  onClose, 
+  items, 
+  onRestore, 
+  onDeleteForever 
+}) => {
+  const [activeTab, setActiveTab] = useState<'all' | 'archived' | 'trashed'>('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  const filteredItems = items
+    .filter(item => {
+      if (activeTab === 'all') return item.status !== 'trashed';
+      return item.status === activeTab;
+    })
+    .sort((a, b) => {
+      return sortOrder === 'newest' ? b.timestamp - a.timestamp : a.timestamp - b.timestamp;
+    });
+
+  const formatDate = (timestamp: number) => {
+    return new Intl.DateTimeFormat('tr-TR', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(new Date(timestamp));
+  };
+
+  const toggleSort = () => {
+    setSortOrder(prev => prev === 'newest' ? 'oldest' : 'newest');
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={onClose}
+      />
+
+      {/* Drawer Panel */}
+      <div 
+        className={`fixed top-0 right-0 h-full w-full max-w-[450px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        {/* Header */}
+        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+          <div className="flex items-center">
+            <Clock className="w-5 h-5 mr-2 text-slate-800" />
+            <h2 className="text-lg font-bold text-gray-900">Editoryal Hafıza</h2>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button 
+              onClick={toggleSort}
+              className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors flex items-center text-xs font-bold"
+              title="Sırala"
+            >
+              <ArrowUpDown className="w-4 h-4 mr-1" />
+              {sortOrder === 'newest' ? 'Yeni' : 'Eski'}
+            </button>
+            <button 
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 px-2 bg-gray-50/50">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+              activeTab === 'all' ? 'border-slate-800 text-slate-800' : 'border-transparent text-gray-400'
+            }`}
+          >
+            Tüm Kayıtlar
+          </button>
+          <button
+            onClick={() => setActiveTab('archived')}
+            className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+              activeTab === 'archived' ? 'border-slate-800 text-slate-800' : 'border-transparent text-gray-400'
+            }`}
+          >
+            Arşiv
+          </button>
+          <button
+            onClick={() => setActiveTab('trashed')}
+            className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
+              activeTab === 'trashed' ? 'border-red-500 text-red-600' : 'border-transparent text-gray-400'
+            }`}
+          >
+            Çöp
+          </button>
+        </div>
+
+        {/* Content List */}
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50/20">
+          {filteredItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 py-12">
+              <FileText className="w-12 h-12 mb-3 opacity-20" />
+              <p className="text-sm font-medium">Bu kategoride içerik bulunamadı.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredItems.map((item) => (
+                <div 
+                  key={item.id} 
+                  onClick={() => onRestore(item)}
+                  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:border-slate-400 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
+                >
+                  <div className="flex justify-between items-start mb-1.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-slate-800 text-white uppercase tracking-widest">
+                      {item.mode}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      {formatDate(item.timestamp)}
+                    </span>
+                  </div>
+                  
+                  <h3 className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+                    {item.output?.headline || item.input.slice(0, 70) + '...'}
+                  </h3>
+                  
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center text-[10px] text-gray-400 italic">
+                      {item.output ? 'Haber Tamamlandı' : 'Sadece Girdi Notları'}
+                    </div>
+                    {activeTab === 'trashed' ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDeleteForever(item.id); }}
+                        className="text-[10px] text-red-500 hover:text-red-700 font-bold uppercase tracking-tighter"
+                      >
+                        Kalıcı Sil
+                      </button>
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
