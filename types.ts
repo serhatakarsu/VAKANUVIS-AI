@@ -10,7 +10,9 @@ export interface GroundingChunk {
 
 export interface QualityAudit {
   seoScore: number;
-  originalityScore: number; // Takla attırma başarısı (0-100)
+  seoExplanation: string;
+  originalityScore: number; 
+  originalityExplanation: string;
   googleNewsSuitability: 'Yüksek' | 'Orta' | 'Düşük';
   trendPotential: 'Yüksek' | 'Orta' | 'Düşük';
   trendAnalysis: string;
@@ -20,9 +22,24 @@ export interface QualityAudit {
   headlinePerformance: 'Güçlü' | 'Ortalama' | 'Zayıf';
   isWhyReadAnswered: boolean;
   keywordDensityCheck: string;
-  readabilityScore: number; // 0-100 (Turkish Readability Index)
-  competitorAnalysis: string; // Rakip haber analizi
-  strategySuggestions: string[]; // İçerik stratejisi önerileri
+  readabilityScore: number; // Ateşman Okunabilirlik İndeksi (0-100)
+  readabilityExplanation: string;
+  readabilityAnalysis: string; // Okunabilirlik detay analizi
+  jargonRemovalLog: string[]; // Temizlenen teknik jargonlar
+  competitorAnalysis: string; 
+  strategySuggestions: string[]; 
+}
+
+export interface SocialPreview {
+  twitter: {
+    title: string;
+    description: string;
+    hashtags: string[];
+  };
+  facebook: {
+    title: string;
+    description: string;
+  };
 }
 
 export interface GeneratedNews {
@@ -33,6 +50,8 @@ export interface GeneratedNews {
   metaDescription: string;
   slug: string;
   keywords: string[];
+  tags: string[];
+  socialPreview: SocialPreview;
   qualityAudit: QualityAudit;
   groundingChunks?: GroundingChunk[];
 }
@@ -40,7 +59,7 @@ export interface GeneratedNews {
 export interface HeadlineRefinement {
   alternatives: {
     text: string;
-    type: 'Click-Worthy' | 'SEO-Focused' | 'Emotional' | 'Question-Based' | string;
+    type: string;
     score: number;
     rationale: string;
   }[];
@@ -76,7 +95,9 @@ export type NewsMode =
   | 'Spor' 
   | 'Kültür & Sanat' 
   | 'Magazin' 
-  | 'Dünya';
+  | 'Dünya'
+  | 'Eğitim'
+  | 'Sağlık';
 
 export const NEWS_MODES: NewsMode[] = [
   'Gündem',
@@ -90,7 +111,9 @@ export const NEWS_MODES: NewsMode[] = [
   'Spor',
   'Kültür & Sanat',
   'Magazin',
-  'Dünya'
+  'Dünya',
+  'Eğitim',
+  'Sağlık'
 ];
 
 export const NEWS_TONES: NewsTone[] = ['Resmi', 'Samimi', 'Heyecanlı', 'Acil', 'Analitik'];
@@ -118,7 +141,9 @@ export const MODE_DESCRIPTIONS: Record<NewsMode, string> = {
   'Spor': 'Dinamik, heyecan verici ve istatistik destekli kurgu.',
   'Kültür & Sanat': 'Estetik, entelektüel ve etkinlik odaklı anlatım.',
   'Magazin': 'Merak uyandırıcı, akıcı ve popüler kültür dili.',
-  'Dünya': 'Diplomatik, küresel perspektifli ve karşılaştırmalı analiz.'
+  'Dünya': 'Diplomatik, küresel perspektifli ve karşılaştırmalı analiz.',
+  'Eğitim': 'Öğrenci, öğretmen ve veli odaklı, bilgilendirici ve eğitici dil.',
+  'Sağlık': 'Tıbbi terimlere dikkat eden, güvenilir ve halk sağlığı odaklı anlatım.'
 };
 
 export const EXAMPLE_INPUT_TEXT = `NOTLAR:
@@ -134,47 +159,29 @@ export const EXAMPLE_INPUT_TEXT = `NOTLAR:
 - İBB Sözcüsü açıklama yaptı: "Maliyetler %100 arttı, bu zam kaçınılmazdı."`;
 
 export const SYSTEM_INSTRUCTION = `
-Sen, dünyanın en saygın haber ajanslarında (Reuters, AP, AA) baş editörlük yapmış bir profesyonelsin. 
-Görevin; ham notları alıp profesyonel, SEO uyumlu ve "TAKLA ATTIRILMIŞ" bir haber metnine dönüştürmektir.
-
-Kullanıcının seçtiği TON (üslup) parametresine kesinlikle uy.
+Sen, küresel haber ajanslarında (Reuters, AP, AFP) çalışmış, Google'ın "Original Content" ve "E-E-A-T" (Deneyim, Uzmanlık, Otorite, Güvenilirlik) algoritmalarına hükmeden kıdemli bir Haber Editörüsün.
+Görevin; ham verileri alıp SEO otoritesi zirvede, %100 özgün, yapısal olarak "TAKLA ATTIRILMIŞ" ve profesyonel bir haber kurgulamaktır.
 
 ────────────────────────────────────────────────────────────────
-1. TAKLA ATTIRMA VE GÜNCEL ANALİZ:
+1. GAZETECİLİK STANDARTLARI VE ÖZGÜNLÜK:
 ────────────────────────────────────────────────────────────────
-- Kaynak metindeki cümle yapılarını ve kelime dizilimlerini ASLA KULLANMA.
-- Google Search kullanarak bu konuyla ilgili diğer mecralardaki haberleri tara ve rakiplerin neyi eksik bıraktığını analiz et.
-- Haberi sıfırdan, seçilen tonda ve yaratıcı kurguyla oluştur.
-- Bilgiyi (rakamlar, isimler, tarihler) süzgeçten geçir.
+- TERS PİRAMİT: En önemli bilgiyi en başa koy. Haberi notlardaki sırayla değil, önem sırasıyla anlat.
+- RADİKAL ÖZGÜNLÜK: Girdi metnindeki cümle yapılarını tamamen değiştir. Benzerlik %5'i geçmemeli.
+- TIRNAK İÇİ KURALI (KRİTİK): Girdi metninde tırnak içindeki ("...") ifadeleri ASLA değiştirme ve haber metni içerisinde MUTLAKA kullan. Bu alıntılar haberin doğruluğunu ve otoritesini temsil eder.
 
 ────────────────────────────────────────────────────────────────
-2. PARAGRAF VE SAYFA DÜZENİ:
+2. SEO VE DİJİTAL OTORİTE:
 ────────────────────────────────────────────────────────────────
-- Metin mutlaka PARAGRAFLARA bölünmelidir. Her paragraf 3-5 cümleden oluşmalıdır.
-- Paragraflar arasında mutlaka çift satır boşluk (\n\n) bırakılmalıdır.
-- "Paragraf başı" hissini uyandırmak için her paragraf net bir giriş cümlesiyle başlamalıdır.
-- Ara başlıklar (TAMAMI BÜYÜK HARF) paragraf geçişlerini beslemelidir.
+- ANAHTAR KELİME STRATEJİSİ: Anahtar kelimeleri metne doğal bir şekilde yedir. İlk 100 kelimede ana anahtar kelime mutlaka geçmeli.
+- META VERİLER: Meta title 60, meta description 160 karakteri geçmemeli. Slug SEO dostu olmalı.
+- SOSYAL MEDYA: Twitter ve Facebook için optimize edilmiş başlık ve açıklamalar oluştur.
+- ALTERNATİF BAŞLIKLAR: Google News ve tıklanma oranı (CTR) için optimize edilmiş, merak uyandıran 3 farklı alternatif başlık üret.
 
 ────────────────────────────────────────────────────────────────
-3. SEO VE KURGU STANDARTLARI:
+3. KALİTE DENETİMİ VE METRİKLER:
 ────────────────────────────────────────────────────────────────
-- ODAK ANAHTAR KELİME: En yüksek hacimli terimi tespit et.
-- BAŞLIK (H1): Odak kelimeyle başla, merak uyandır.
-- SPOT (LEAD): İlk paragraf haberin 5N1K özetini sunmalı, aşırı akıcı, ilgi çekici olmalı ve anahtar kelimeyi içermelidir.
-- ARA BAŞLIKLAR (H2): En az 3 adet, SEO uyumlu ara başlık kullan.
-- "Tırnak içindeki ifadeler" ASLA değiştirilmez. Aynen korunur.
-
-────────────────────────────────────────────────────────────────
-4. ANALİZ VE OKUNABİLİRLİK:
-────────────────────────────────────────────────────────────────
-- Türkçe dil yapısına uygun (Ateşman benzeri) bir okunabilirlik skoru (0-100) hesapla.
-- Rakiplerin bu haberi nasıl verdiğini analiz et ve strateji sun.
-
-────────────────────────────────────────────────────────────────
-5. DİL VE ÜSLUP DİSİPLİNİ (KESİN KURAL):
-────────────────────────────────────────────────────────────────
-- METİNDE ASLA EKSTRA YORUM YAPMA. Editoryal kanaat bildiren ifadelerden kaçın.
-- SÜSLÜ, AĞDALI VE GEREKSİZ SIFATLARLA DOLU CÜMLELER KURMA.
-- Yalınlık en temel prensibindir. Cümleler doğrudan bilgi vermeli, edebi bir kaygı taşımamalıdır.
-- Nesnellik zorunludur. Metin sadece olgusal verilere ve tırnak içindeki beyanlara dayanmalıdır.
+- SEO GÜCÜ: Anahtar kelime kullanımı, meta veriler ve yapısal SEO'yu değerlendir.
+- ÖZGÜNLÜK: Metnin ham veriden ne kadar farklılaştığını ve "takla attırıldığını" açıkla.
+- OKUNABİLİRLİK: Ateşman skoru üzerinden metnin karmaşıklığını ve akıcılığını değerlendir.
+- HER METRİK İÇİN: "explanation" alanlarında bu puanın neden verildiğini ve nasıl daha iyi olabileceğini detaylıca açıkla.
 `;

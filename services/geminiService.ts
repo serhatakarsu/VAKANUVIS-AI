@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type, Chat } from "@google/genai";
+import { GoogleGenAI, Type, Chat, ThinkingLevel } from "@google/genai";
 import { GeneratedNews, SYSTEM_INSTRUCTION, NewsMode, HeadlineRefinement, SpotRefinement, NewsTone } from "../types";
 
 // Initialize the Gemini client inside functions to pick up latest API key
@@ -43,6 +43,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
         systemInstruction: SYSTEM_INSTRUCTION,
         tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -56,11 +57,43 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
               type: Type.ARRAY,
               items: { type: Type.STRING }
             },
+            tags: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            socialPreview: {
+              type: Type.OBJECT,
+              properties: {
+                twitter: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    hashtags: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING }
+                    }
+                  },
+                  required: ["title", "description", "hashtags"]
+                },
+                facebook: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    description: { type: Type.STRING }
+                  },
+                  required: ["title", "description"]
+                }
+              },
+              required: ["twitter", "facebook"]
+            },
             qualityAudit: {
               type: Type.OBJECT,
               properties: {
                 seoScore: { type: Type.INTEGER },
+                seoExplanation: { type: Type.STRING },
                 originalityScore: { type: Type.INTEGER },
+                originalityExplanation: { type: Type.STRING },
                 googleNewsSuitability: { type: Type.STRING },
                 trendPotential: { type: Type.STRING },
                 trendAnalysis: { type: Type.STRING },
@@ -77,6 +110,12 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
                 isWhyReadAnswered: { type: Type.BOOLEAN },
                 keywordDensityCheck: { type: Type.STRING },
                 readabilityScore: { type: Type.INTEGER },
+                readabilityExplanation: { type: Type.STRING },
+                readabilityAnalysis: { type: Type.STRING },
+                jargonRemovalLog: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING }
+                },
                 competitorAnalysis: { type: Type.STRING },
                 strategySuggestions: {
                   type: Type.ARRAY,
@@ -84,15 +123,16 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
                 }
               },
               required: [
-                "seoScore", "originalityScore", "googleNewsSuitability", 
-                "trendPotential", "trendAnalysis", "critique", "suggestions", 
-                "alternativeHeadlines", "headlinePerformance", "isWhyReadAnswered", 
-                "keywordDensityCheck", "readabilityScore", "competitorAnalysis", 
-                "strategySuggestions"
+                "seoScore", "seoExplanation", "originalityScore", "originalityExplanation",
+                "googleNewsSuitability", "trendPotential", "trendAnalysis", "critique", 
+                "suggestions", "alternativeHeadlines", "headlinePerformance", 
+                "isWhyReadAnswered", "keywordDensityCheck", "readabilityScore", 
+                "readabilityExplanation", "readabilityAnalysis", "jargonRemovalLog", 
+                "competitorAnalysis", "strategySuggestions"
               ]
             }
           },
-          required: ["headline", "spot", "body", "metaTitle", "metaDescription", "slug", "keywords", "qualityAudit"],
+          required: ["headline", "spot", "body", "metaTitle", "metaDescription", "slug", "keywords", "tags", "socialPreview", "qualityAudit"],
         },
       },
     });
@@ -123,35 +163,32 @@ export const refineHeadline = async (currentHeadline: string, newsBody: string):
       model: modelName,
       contents: `Mevcut Başlık: ${currentHeadline}\n\nHaber İçeriği (Özet): ${newsBody.slice(0, 800)}`,
       config: {
-        systemInstruction: `Sen dünyanın en iyi dijital yayın editörlerinden birisin. Görevin, mevcut haberi "tıklanma canavarına" (click-worthy) dönüştürecek 3 farklı alternatif başlık üretmektir. 
+        systemInstruction: `Sen dünyanın en iyi dijital yayın editörlerinden birisin. Görevin, mevcut haberi hem SEO uyumlu hem de son derece mantıklı ve okunabilir 3 farklı alternatif başlığa dönüştürmektir. 
 
 Kurallar:
-1. Duygusal Tetikleyiciler: Okuyucunun korku, heyecan, mutluluk veya merak duygularına hitap et.
-2. Merak Unsuru: Başlıkta her şeyi söyleme, okuyucuyu detayı öğrenmek için habere tıklamaya zorla.
-3. SEO Uyumu: Anahtar kelimeyi başlığın başına veya merkezine yerleştir.
-4. Toplam 3 alternatif üret.
-5. Her başlık için editoryal bir gerekçe (rationale) yaz. Neden bu duyguya odaklandığını açıkla.`,
-        ...(modelName === 'gemini-3-pro-preview' ? { thinkingConfig: { thinkingBudget: 32768 } } : {}),
+1. FORMAT: Başlıklar ASLA "TAMAMI BÜYÜK" harfle yazılmamalı. İlk kelime ve özel isimler dışında küçük harf kuralına (Sentence Case) uyulmalıdır.
+2. Mantık ve Okunabilirlik: Başlıklar mantıklı bir bütünlük arz etmeli, okuyucuyu aldatmamalı (clickbait değil, click-worthy olmalı) ve akıcı olmalıdır.
+3. Merak Unsuru: Başlıkta her şeyi söyleme, okuyucuyu detayı öğrenmek için habere tıklamaya zorla.
+4. SEO Uyumu: Anahtar kelimeyi başlığın başına veya merkezine yerleştir.`,
+        ...(modelName === 'gemini-3-pro-preview' ? { thinkingConfig: { thinkingBudget: 2048 } } : {}),
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
             alternatives: {
               type: Type.ARRAY,
-              minItems: 3,
-              maxItems: 3,
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  text: { type: Type.STRING, description: "Önerilen yeni başlık." },
-                  type: { type: Type.STRING, description: "Click-Worthy, Emotional, Curiosity vb." },
-                  score: { type: Type.INTEGER, description: "Beklenen başarı puanı (0-100)." },
-                  rationale: { type: Type.STRING, description: "Bu başlığın neden işe yarayacağına dair psikolojik açıklama." }
+                  text: { type: Type.STRING },
+                  type: { type: Type.STRING },
+                  score: { type: Type.INTEGER },
+                  rationale: { type: Type.STRING }
                 },
                 required: ["text", "type", "score", "rationale"]
               }
             },
-            analysis: { type: Type.STRING, description: "Genel editoryal strateji notu." }
+            analysis: { type: Type.STRING }
           },
           required: ["alternatives", "analysis"]
         }
@@ -161,9 +198,9 @@ Kurallar:
   };
 
   try {
-    return await withRetry(() => callApi('gemini-3-pro-preview'));
+    return await withRetry(() => callApi('gemini-3-flash-preview'));
   } catch (error: any) {
-    return await withRetry(() => callApi('gemini-3-flash-preview'), 2);
+    return await withRetry(() => callApi('gemini-3-pro-preview'), 2);
   }
 };
 
@@ -175,14 +212,12 @@ export const refineSpot = async (currentSpot: string, newsBody: string): Promise
       model: modelName,
       contents: `Mevcut Spot: ${currentSpot}\n\nHaber İçeriği: ${newsBody.slice(0, 1000)}`,
       config: {
-        systemInstruction: `Sen bir haber kurgu uzmanısın. Mevcut spot metnini (lead) analiz et ve Google News, sosyal medya ve SEO için daha etkileyici, "merak uyandırıcı" 3 farklı alternatif üret. 
+        systemInstruction: `Sen bir haber kurgu uzmanısın. Mevcut spot metnini (lead) analiz et ve Google News, sosyal medya ve SEO için daha etkileyici 3 farklı alternatif üret. 
 
 Kriterler:
-- Okuyucuyu hemen haberin devamına yönlendir.
-- Anahtar kelimeyi ilk 10 kelime içine yerleştir.
-- Maksimum 2 cümle olsun.
-- Merak ve fayda odaklı (WIIFM - What's in it for me) bir dil kullan.`,
-        ...(modelName === 'gemini-3-pro-preview' ? { thinkingConfig: { thinkingBudget: 32768 } } : {}),
+1. "Merak Boşluğu" (Curiosity Gap) tekniğini kullan. Okuyucuya "ne olmuş?" sorusunu sordurt.
+2. Anahtar kelimeyi akıcı bir şekilde ilk cümleye yedir.`,
+        ...(modelName === 'gemini-3-pro-preview' ? { thinkingConfig: { thinkingBudget: 2048 } } : {}),
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -192,10 +227,10 @@ Kriterler:
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  text: { type: Type.STRING, description: "Önerilen yeni spot metni." },
-                  type: { type: Type.STRING, description: "Kategori (Merak, SEO, Aksiyon vb.)" },
-                  score: { type: Type.INTEGER, description: "Beklenen CTR puanı." },
-                  rationale: { type: Type.STRING, description: "Psikolojik analiz." }
+                  text: { type: Type.STRING },
+                  type: { type: Type.STRING },
+                  score: { type: Type.INTEGER },
+                  rationale: { type: Type.STRING }
                 },
                 required: ["text", "type", "score", "rationale"]
               }
@@ -210,9 +245,9 @@ Kriterler:
   };
 
   try {
-    return await withRetry(() => callApi('gemini-3-pro-preview'));
+    return await withRetry(() => callApi('gemini-3-flash-preview'));
   } catch (error: any) {
-    return await withRetry(() => callApi('gemini-3-flash-preview'), 2);
+    return await withRetry(() => callApi('gemini-3-pro-preview'), 2);
   }
 };
 
