@@ -6,8 +6,9 @@ import { OutputSection } from './components/OutputSection';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { ChatBot } from './components/ChatBot';
 import { generateNewsContent } from './services/geminiService';
-import { GeneratedNews, AppState, NewsMode, NEWS_MODES, SavedItem, NewsTone, NEWS_TONES, AdvancedFeatures, DEFAULT_ADVANCED_FEATURES } from './types';
+import { GeneratedNews, AppState, SavedItem, AdvancedFeatures, DEFAULT_ADVANCED_FEATURES, NewsSelectionState } from './types';
 import { addItemToHistory, getHistory, deleteItemFromHistory } from './services/storage';
+import { DEFAULT_NEWS_SELECTION, getNewsSelectionState, saveNewsSelectionState } from './services/newsSelectionStorage';
 import { KeyRound, ExternalLink, AlertCircle, RefreshCw, Loader2, Feather, CheckCircle2, Info, X, Sparkles, Zap, ShieldCheck, Globe, TrendingUp, Search, History as HistoryIcon, MessageSquare } from 'lucide-react';
 
 interface Toast {
@@ -55,8 +56,7 @@ const generateId = () => {
 
 function App() {
   const [inputText, setInputText] = useState('');
-  const [newsMode, setNewsMode] = useState<NewsMode>(NEWS_MODES[0]);
-  const [newsTone, setNewsTone] = useState<NewsTone>(NEWS_TONES[0]);
+  const [newsSelection, setNewsSelection] = useState<NewsSelectionState>(() => getNewsSelectionState());
   const [advancedFeatures, setAdvancedFeatures] = useState<AdvancedFeatures>(DEFAULT_ADVANCED_FEATURES);
   const [generatedNews, setGeneratedNews] = useState<GeneratedNews | null>(null);
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
@@ -87,6 +87,10 @@ function App() {
       setShowWelcome(true);
     }
   }, []);
+
+  useEffect(() => {
+    saveNewsSelectionState(newsSelection);
+  }, [newsSelection]);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -137,7 +141,7 @@ function App() {
     setErrorMessage(null);
 
     try {
-      const news = await generateNewsContent(text, newsMode, newsTone, advancedFeatures);
+      const news = await generateNewsContent(text, newsSelection.mode, newsSelection.tone, advancedFeatures);
       setGeneratedNews(news);
       setAppState(AppState.SUCCESS);
       addToast("Haber başarıyla oluşturuldu!", "success");
@@ -147,7 +151,7 @@ function App() {
         timestamp: Date.now(),
         status: 'active',
         input: text,
-        mode: newsMode,
+        mode: newsSelection.mode,
         output: news
       };
       setHistoryItems(addItemToHistory(newItem));
@@ -181,7 +185,7 @@ function App() {
       timestamp: Date.now(),
       status: 'archived',
       input: text,
-      mode: newsMode,
+      mode: newsSelection.mode,
       output: generatedNews
     };
     setHistoryItems(addItemToHistory(newItem));
@@ -199,7 +203,7 @@ function App() {
         timestamp: Date.now(),
         status: 'trashed',
         input: text,
-        mode: newsMode,
+        mode: newsSelection.mode,
         output: generatedNews
       };
       setHistoryItems(addItemToHistory(newItem));
@@ -211,7 +215,7 @@ function App() {
 
   const handleRestore = (item: SavedItem) => {
     setInputText(item.input);
-    setNewsMode(item.mode);
+    setNewsSelection(prev => ({ ...prev, mode: item.mode }));
     setGeneratedNews(item.output);
     setAppState(item.output ? AppState.SUCCESS : AppState.IDLE);
     setIsHistoryOpen(false);
@@ -219,6 +223,19 @@ function App() {
 
   const handleAdvancedFeatureChange = (feature: keyof AdvancedFeatures) => {
     setAdvancedFeatures(prev => ({ ...prev, [feature]: !prev[feature] }));
+  };
+
+  const handleModeChange = (mode: NewsSelectionState['mode']) => {
+    setNewsSelection(prev => ({ ...prev, mode }));
+  };
+
+  const handleToneChange = (tone: NewsSelectionState['tone']) => {
+    setNewsSelection(prev => ({ ...prev, tone }));
+  };
+
+  const handleResetSelection = () => {
+    setNewsSelection(DEFAULT_NEWS_SELECTION);
+    addToast('Kategori ve ton varsayılana döndürüldü.', 'info');
   };
 
   const handleDeleteForever = (id: string) => {
@@ -288,19 +305,20 @@ function App() {
             <InputSection 
               value={inputText} 
               onChange={setInputText} 
-              selectedMode={newsMode} 
-              onModeChange={setNewsMode} 
-              selectedTone={newsTone} 
-              onToneChange={setNewsTone} 
+              selectedMode={newsSelection.mode} 
+              onModeChange={handleModeChange} 
+              selectedTone={newsSelection.tone} 
+              onToneChange={handleToneChange} 
               advancedFeatures={advancedFeatures}
               onAdvancedFeatureChange={handleAdvancedFeatureChange}
+              onResetSelection={handleResetSelection}
               onClear={handleClear} 
               onGenerate={handleGenerate} 
               isLoading={appState === AppState.LOADING} 
             />
           </div>
           <div className="lg:col-span-7 h-full min-h-[600px] lg:min-h-0">
-            <OutputSection news={generatedNews} isEmpty={appState === AppState.IDLE || (appState === AppState.LOADING && !generatedNews)} onArchive={handleArchive} selectedTone={newsTone} />
+            <OutputSection news={generatedNews} isEmpty={appState === AppState.IDLE || (appState === AppState.LOADING && !generatedNews)} onArchive={handleArchive} selectedTone={newsSelection.tone} />
           </div>
         </div>
       </main>

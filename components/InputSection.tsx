@@ -12,6 +12,7 @@ interface InputSectionProps {
   onToneChange: (tone: NewsTone) => void;
   advancedFeatures: AdvancedFeatures;
   onAdvancedFeatureChange: (feature: keyof AdvancedFeatures) => void;
+  onResetSelection: () => void;
   onClear: () => void;
   onGenerate: () => void;
   isLoading: boolean;
@@ -32,6 +33,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
   onToneChange,
   advancedFeatures,
   onAdvancedFeatureChange,
+  onResetSelection,
   onClear, 
   onGenerate, 
   isLoading 
@@ -126,10 +128,20 @@ export const InputSection: React.FC<InputSectionProps> = ({
       {/* Config Area */}
       <div className="p-6 pb-4 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-900 space-y-6 overflow-y-auto custom-scrollbar">
         <div>
-          <label className="flex items-center space-x-2 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">
-             <Hash className="w-3 h-3" />
-             <span>Haber Kategorisi</span>
-          </label>
+          <div className="flex items-center justify-between mb-3 gap-3">
+            <label className="flex items-center space-x-2 text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+              <Hash className="w-3 h-3" />
+              <span>Haber Kategorisi</span>
+            </label>
+            <button
+              onClick={onResetSelection}
+              disabled={isLoading}
+              className="flex items-center space-x-1.5 text-[9px] font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-[0.12em]"
+            >
+              <Eraser className="w-3 h-3" />
+              <span>Seçimi Temizle</span>
+            </button>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
             {NEWS_MODES.map((mode) => (
               <button
