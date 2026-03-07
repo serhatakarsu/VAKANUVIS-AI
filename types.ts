@@ -177,6 +177,11 @@ export const NEWS_MODES: NewsMode[] = [
 
 export const NEWS_TONES: NewsTone[] = ['SEO Uyumlu Özgün Haber', 'Ulusal Medya Tipi Tık Odaklı'];
 
+export interface NewsSelectionState {
+  mode: NewsMode;
+  tone: NewsTone;
+}
+
 export const TONE_DESCRIPTIONS: Record<NewsTone, string> = {
   'SEO Uyumlu Özgün Haber': 'Nesnel, %100 özgün ve SEO odaklı "takla attırılmış" haber.',
   'Ulusal Medya Tipi Tık Odaklı': 'Yüksek etkileşimli, merak uyandıran ulusal medya tarzı içerik.'
