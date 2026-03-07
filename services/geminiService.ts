@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, Type, Chat, ThinkingLevel } from "@google/genai";
-import { GeneratedNews, SYSTEM_INSTRUCTION, NewsMode, HeadlineRefinement, SpotRefinement, NewsTone, AdvancedFeatures } from "../types";
+import { GeneratedNews, NewsMode, HeadlineRefinement, SpotRefinement, NewsTone, AdvancedFeatures } from "../types";
+import { buildNewsGenerationPrompt, buildSystemPrompt } from "./promptBuilder";
 
 // Initialize the Gemini client inside functions to pick up latest API key
 const getAiClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
@@ -371,9 +372,9 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
 
     const response = await ai.models.generateContent({
       model: modelName,
-      contents: `Seçilen Haber Modu: ${mode}\nSeçilen Ton: ${tone}\n\nAKTİF GELİŞMİŞ ÖZELLİKLER:${extraInstructions || "\nYok (Sadece haber metni üret)"}\n\nHam Metin/Notlar:\n${rawText}`,
+      contents: buildNewsGenerationPrompt(mode, tone, extraInstructions, rawText),
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
+        systemInstruction: buildSystemPrompt(),
         tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
         responseSchema: {
