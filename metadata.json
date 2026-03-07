@@ -1,5 +1,5 @@
 {
-  "name": "Haber Yazım Asistanı",
-  "description": "Gazetecilik ilkelerine uygun, SEO uyumlu profesyonel haber metinleri oluşturan yapay zeka asistanı.",
-  "requestFramePermissions": []
+  "name": "Vakanüvis",
+  "description": "Haberin Dijital Hafızası, Geleceğin Kalemi. Gazete sahipleri ve dijital yayıncılar için profesyonel AI editör.",
+  "requestFramePermissions": ["microphone"]
 }

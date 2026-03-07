@@ -1,78 +1,99 @@
 import React from 'react';
-import { PenTool, Archive } from 'lucide-react';
+import { PenTool, Archive, Sun, Moon, Zap } from 'lucide-react';
 
 interface HeaderProps {
   onOpenHistory: () => void;
+  isDarkMode: boolean;
+  onToggleTheme: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenHistory }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenHistory, isDarkMode, onToggleTheme }) => {
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-10 backdrop-blur-md bg-white/90">
+    <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur-md bg-white/90 dark:bg-slate-900/90 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center group cursor-default">
-            {/* Custom Logo: AI Nib */}
+            {/* Custom Logo: Vakanüvis Geometric Crane */}
             <div className="mr-3 flex-shrink-0 transition-transform transform group-hover:scale-105 duration-300">
               <svg className="h-10 w-10 shadow-sm rounded-xl" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                  <linearGradient id="logo-gradient" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#2563EB" />
-                    <stop offset="1" stopColor="#1E40AF" />
-                  </linearGradient>
-                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="2" result="blur" />
+                  <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="1" result="blur" />
                     <feComposite in="SourceGraphic" in2="blur" operator="over" />
                   </filter>
                 </defs>
                 
                 {/* Background Container */}
-                <rect width="40" height="40" rx="10" fill="url(#logo-gradient)" />
+                <rect width="40" height="40" rx="10" fill="#F8FAFC" className="dark:fill-slate-800" />
                 
-                {/* Pen Nib Shape (Journalism) */}
+                {/* Geometric Crane Bird (Hexagonal/Pixel Style) */}
+                {/* Main Body / V-Shape */}
                 <path 
-                  d="M20 33L12.5 17.5C11.8 16 11.5 14.5 12 13C12.5 10 15 8 20 8C25 8 27.5 10 28 13C28.5 14.5 28.2 16 27.5 17.5L20 33Z" 
-                  fill="white" 
-                />
-                
-                {/* Ink Channel (Center Split) */}
-                <path 
-                  d="M20 8V22" 
-                  stroke="url(#logo-gradient)" 
-                  strokeWidth="2" 
+                  d="M12 15L20 28L28 15" 
+                  stroke="#000000" 
+                  strokeWidth="3" 
                   strokeLinecap="round" 
+                  strokeLinejoin="round" 
                 />
                 
-                {/* AI Spark (Intelligence) - Top Right Accent */}
+                {/* Crane Wings / Hexagonal Elements */}
                 <path 
-                  d="M29 6L30.2 8.5L33 9.5L30.2 10.5L29 13L27.8 10.5L25 9.5L27.8 8.5L29 6Z" 
-                  fill="#FCD34D" 
-                  filter="url(#glow)"
+                  d="M20 12L28 18L28 26L20 32L12 26L12 18L20 12Z" 
+                  fill="#000080" 
+                  fillOpacity="0.1"
+                  stroke="#000080"
+                  strokeWidth="1"
+                />
+                
+                {/* Pixel Trail (Navy Blue) */}
+                <rect x="30" y="10" width="2" height="2" fill="#000080" />
+                <rect x="33" y="13" width="2" height="2" fill="#000080" opacity="0.6" />
+                <rect x="36" y="16" width="2" height="2" fill="#000080" opacity="0.3" />
+                
+                {/* Head / Beak */}
+                <path 
+                  d="M20 12L23 9L26 12" 
+                  fill="#000000" 
                 />
               </svg>
             </div>
             
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight leading-none">
-                Haber Yazım <span className="text-blue-600">Asistanı</span>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight leading-none">
+                VAKANÜVİS <span className="text-blue-900 dark:text-blue-400">AI</span>
               </h1>
-              <p className="text-xs text-gray-500 font-medium mt-1 tracking-wide">
-                AI Destekli Profesyonel Editör
+              <p className="text-[10px] text-gray-500 dark:text-slate-400 font-bold mt-1 tracking-tight uppercase">
+                Haberin Dijital Hafızası
               </p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="relative">
+              <button 
+                onClick={onToggleTheme}
+                className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                title={isDarkMode ? "Aydınlık Mod" : "Karanlık Mod"}
+              >
+                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+              </span>
+            </div>
+
             <button 
               onClick={onOpenHistory}
-              className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg transition-all text-sm font-medium border border-transparent hover:border-blue-100"
+              className="flex items-center space-x-2 text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 px-3 py-2 rounded-lg transition-all text-sm font-medium border border-transparent hover:border-blue-100 dark:hover:border-blue-900/50"
             >
               <Archive className="w-4 h-4" />
-              <span>Arşiv & Geçmiş</span>
+              <span className="hidden sm:inline">Arşiv & Geçmiş</span>
             </button>
-
-            <div className="hidden md:flex items-center space-x-2 text-gray-400 text-xs bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-               <PenTool className="w-3 h-3" />
-               <span>v1.2</span>
+ 
+            <div className="hidden md:flex items-center space-x-2 text-blue-600 dark:text-blue-400 text-[10px] font-black bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/50 animate-pulse">
+               <Zap className="w-3 h-3" />
+               <span>v2.0 PRO</span>
             </div>
           </div>
         </div>

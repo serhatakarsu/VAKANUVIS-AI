@@ -52,18 +52,18 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
 
       {/* Drawer Panel */}
       <div 
-        className={`fixed top-0 right-0 h-full w-full max-w-[450px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 h-full w-full max-w-[450px] bg-white dark:bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         {/* Header */}
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-white sticky top-0 z-10">
+        <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 z-10">
           <div className="flex items-center">
-            <Clock className="w-5 h-5 mr-2 text-slate-800" />
-            <h2 className="text-lg font-bold text-gray-900">Editoryal Hafıza</h2>
+            <Clock className="w-5 h-5 mr-2 text-slate-800 dark:text-slate-200" />
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Vakanüvis Hafızası</h2>
           </div>
           <div className="flex items-center space-x-2">
             <button 
               onClick={toggleSort}
-              className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors flex items-center text-xs font-bold"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-500 dark:text-slate-400 transition-colors flex items-center text-xs font-bold"
               title="Sırala"
             >
               <ArrowUpDown className="w-4 h-4 mr-1" />
@@ -71,7 +71,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
             </button>
             <button 
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -79,11 +79,11 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-100 px-2 bg-gray-50/50">
+        <div className="flex border-b border-gray-100 dark:border-slate-800 px-2 bg-gray-50/50 dark:bg-slate-800/30">
           <button
             onClick={() => setActiveTab('all')}
             className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-              activeTab === 'all' ? 'border-slate-800 text-slate-800' : 'border-transparent text-gray-400'
+              activeTab === 'all' ? 'border-slate-800 dark:border-blue-500 text-slate-800 dark:text-blue-500' : 'border-transparent text-gray-400 dark:text-slate-500'
             }`}
           >
             Tüm Kayıtlar
@@ -91,7 +91,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           <button
             onClick={() => setActiveTab('archived')}
             className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-              activeTab === 'archived' ? 'border-slate-800 text-slate-800' : 'border-transparent text-gray-400'
+              activeTab === 'archived' ? 'border-slate-800 dark:border-blue-500 text-slate-800 dark:text-blue-500' : 'border-transparent text-gray-400 dark:text-slate-500'
             }`}
           >
             Arşiv
@@ -99,7 +99,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
           <button
             onClick={() => setActiveTab('trashed')}
             className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors border-b-2 ${
-              activeTab === 'trashed' ? 'border-red-500 text-red-600' : 'border-transparent text-gray-400'
+              activeTab === 'trashed' ? 'border-red-500 text-red-600' : 'border-transparent text-gray-400 dark:text-slate-500'
             }`}
           >
             Çöp
@@ -107,9 +107,9 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
         </div>
 
         {/* Content List */}
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50/20">
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50/20 dark:bg-slate-900/50">
           {filteredItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400 py-12">
+            <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-slate-600 py-12">
               <FileText className="w-12 h-12 mb-3 opacity-20" />
               <p className="text-sm font-medium">Bu kategoride içerik bulunamadı.</p>
             </div>
@@ -119,23 +119,23 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                 <div 
                   key={item.id} 
                   onClick={() => onRestore(item)}
-                  className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:border-slate-400 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
+                  className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-gray-200 dark:border-slate-700 shadow-sm hover:border-slate-400 dark:hover:border-slate-500 hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
                 >
                   <div className="flex justify-between items-start mb-1.5">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-slate-800 text-white uppercase tracking-widest">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-slate-800 dark:bg-blue-600 text-white uppercase tracking-widest">
                       {item.mode}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-mono">
+                    <span className="text-[10px] text-gray-400 dark:text-slate-500 font-mono">
                       {formatDate(item.timestamp)}
                     </span>
                   </div>
                   
-                  <h3 className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {item.output?.headline || item.input.slice(0, 70) + '...'}
                   </h3>
                   
                   <div className="flex items-center justify-between mt-3">
-                    <div className="flex items-center text-[10px] text-gray-400 italic">
+                    <div className="flex items-center text-[10px] text-gray-400 dark:text-slate-500 italic">
                       {item.output ? 'Haber Tamamlandı' : 'Sadece Girdi Notları'}
                     </div>
                     {activeTab === 'trashed' ? (
@@ -146,7 +146,7 @@ export const HistoryDrawer: React.FC<HistoryDrawerProps> = ({
                         Kalıcı Sil
                       </button>
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="w-4 h-4 text-gray-300 dark:text-slate-600 group-hover:translate-x-1 transition-transform" />
                     )}
                   </div>
                 </div>

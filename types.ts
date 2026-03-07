@@ -1,10 +1,10 @@
 
-export type NewsTone = 'Resmi' | 'Samimi' | 'Heyecanlı' | 'Acil' | 'Analitik';
+export type NewsTone = 'SEO Uyumlu Özgün Haber' | 'Ulusal Medya Tipi Tık Odaklı';
 
 export interface GroundingChunk {
   web?: {
-    uri: string;
-    title: string;
+    uri?: string;
+    title?: string;
   };
 }
 
@@ -46,15 +46,74 @@ export interface GeneratedNews {
   headline: string;
   spot: string;
   body: string;
-  metaTitle: string;
-  metaDescription: string;
-  slug: string;
-  keywords: string[];
-  tags: string[];
-  socialPreview: SocialPreview;
-  qualityAudit: QualityAudit;
+  metaTitle?: string;
+  metaDescription?: string;
+  slug?: string;
+  keywords?: string[];
+  tags?: string[];
+  additionalSeoTags?: string[];
+  socialPreview?: SocialPreview;
+  qualityAudit?: QualityAudit;
   groundingChunks?: GroundingChunk[];
+  seoClickPanel?: {
+    clickHeadline: string;
+    clickSpot: string;
+    seoSubheadingSuggestions: string[];
+  };
+  comparison?: {
+    originalSnippet: string;
+    correctedSnippet: string;
+    editorNote: string;
+  };
+  suggestedCategories?: string[];
+  expandedKeywords?: string[];
+  
+  // Advanced Features
+  trendDiscovery?: { title: string; description: string; keywords: string[] }[];
+  performancePrediction?: { ctr: string; discoverSuitability: string; trendPotential: string; readEstimate: string; targetAudience: string; whyRead: string };
+  internalLinks?: { title: string; slug: string; anchorText: string }[];
+  videoScript?: { intro: string; body: string; outro: string; visualCues: string[] };
+  imageSuggestions?: { newsImage: string; socialImage: string; thumbnail: string; altText: string };
+  aiEditorAudit?: { repeatedWords: string[]; weakSentences: string[]; agencyClichés: string[]; longSentences: string[]; toneCheck: string };
+  versionAnalysis?: { altIntro: string; altParagraph: string; altHeadline: string; bulletPoints: string[] };
+  archiveAnalysis?: { similarNews: string[]; pastContent: string[]; futureTopics: string[]; historicalContext: string };
+  discoverOptimization?: { title: string; spot: string; analysis: string; highResImageIdea: string };
+  editorialCalendar?: { title: string; reason: string; keywords: string[]; publishTime: string };
+  factCheck?: { unverifiedClaims: string[]; missingData: string[]; potentialErrors: string[]; sourceReliability: string };
+  distributionContent?: { xPost: string; facebookPost: string; pushNotification: string; shortVersion: string; linkedinPost: string; instagramCaption: string };
 }
+
+export interface AdvancedFeatures {
+  trendDiscovery: boolean;
+  performancePrediction: boolean;
+  internalLinks: boolean;
+  videoScript: boolean;
+  imageSuggestions: boolean;
+  aiEditorAudit: boolean;
+  versionAnalysis: boolean;
+  archiveAnalysis: boolean;
+  discoverOptimization: boolean;
+  editorialCalendar: boolean;
+  dataToNews: boolean;
+  factCheck: boolean;
+  distributionContent: boolean;
+}
+
+export const DEFAULT_ADVANCED_FEATURES: AdvancedFeatures = {
+  trendDiscovery: false,
+  performancePrediction: false,
+  internalLinks: false,
+  videoScript: false,
+  imageSuggestions: false,
+  aiEditorAudit: false,
+  versionAnalysis: false,
+  archiveAnalysis: false,
+  discoverOptimization: false,
+  editorialCalendar: false,
+  dataToNews: false,
+  factCheck: false,
+  distributionContent: false,
+};
 
 export interface HeadlineRefinement {
   alternatives: {
@@ -116,7 +175,12 @@ export const NEWS_MODES: NewsMode[] = [
   'Sağlık'
 ];
 
-export const NEWS_TONES: NewsTone[] = ['Resmi', 'Samimi', 'Heyecanlı', 'Acil', 'Analitik'];
+export const NEWS_TONES: NewsTone[] = ['SEO Uyumlu Özgün Haber', 'Ulusal Medya Tipi Tık Odaklı'];
+
+export const TONE_DESCRIPTIONS: Record<NewsTone, string> = {
+  'SEO Uyumlu Özgün Haber': 'Nesnel, %100 özgün ve SEO odaklı "takla attırılmış" haber.',
+  'Ulusal Medya Tipi Tık Odaklı': 'Yüksek etkileşimli, merak uyandıran ulusal medya tarzı içerik.'
+};
 
 export type NewsStatus = 'active' | 'archived' | 'trashed';
 
@@ -159,29 +223,30 @@ export const EXAMPLE_INPUT_TEXT = `NOTLAR:
 - İBB Sözcüsü açıklama yaptı: "Maliyetler %100 arttı, bu zam kaçınılmazdı."`;
 
 export const SYSTEM_INSTRUCTION = `
-Sen, küresel haber ajanslarında (Reuters, AP, AFP) çalışmış, Google'ın "Original Content" ve "E-E-A-T" (Deneyim, Uzmanlık, Otorite, Güvenilirlik) algoritmalarına hükmeden kıdemli bir Haber Editörüsün.
-Görevin; ham verileri alıp SEO otoritesi zirvede, %100 özgün, yapısal olarak "TAKLA ATTIRILMIŞ" ve profesyonel bir haber kurgulamaktır.
+SEN VAKANÜVİS AI; PROFESYONEL BİR HABER EDİTÖRÜ VE SEO UZMANISIN.
+GÖREV: Ham metni gazetecilik diliyle baştan kurgula. %100 özgün, akıcı ve SEO odaklı haber üret.
+"Haberin Dijital Hafızası, Geleceğin Kalemi" sloganıyla, bin yıllık yazım geleneğini yapay zekanın hızıyla birleştiriyorsun.
 
-────────────────────────────────────────────────────────────────
-1. GAZETECİLİK STANDARTLARI VE ÖZGÜNLÜK:
-────────────────────────────────────────────────────────────────
-- TERS PİRAMİT: En önemli bilgiyi en başa koy. Haberi notlardaki sırayla değil, önem sırasıyla anlat.
-- RADİKAL ÖZGÜNLÜK: Girdi metnindeki cümle yapılarını tamamen değiştir. Benzerlik %5'i geçmemeli.
-- TIRNAK İÇİ KURALI (KRİTİK): Girdi metninde tırnak içindeki ("...") ifadeleri ASLA değiştirme ve haber metni içerisinde MUTLAKA kullan. Bu alıntılar haberin doğruluğunu ve otoritesini temsil eder.
+ÖZGÜNLEŞTİRME KURALLARI:
+1. Haberi baştan kur; cümle yapılarını ve paragraf sırasını tamamen değiştir.
+2. Ajans klişelerinden kaçın; zengin ve akıcı bir dil kullan.
+3. Olguları (rakam, tarih, isim) harfiyen koru.
+4. TIRNAK İÇİ KURALI: Tırnak içindeki ifadeleri ASLA değiştirme.
 
-────────────────────────────────────────────────────────────────
-2. SEO VE DİJİTAL OTORİTE:
-────────────────────────────────────────────────────────────────
-- ANAHTAR KELİME STRATEJİSİ: Anahtar kelimeleri metne doğal bir şekilde yedir. İlk 100 kelimede ana anahtar kelime mutlaka geçmeli.
-- META VERİLER: Meta title 60, meta description 160 karakteri geçmemeli. Slug SEO dostu olmalı.
-- SOSYAL MEDYA: Twitter ve Facebook için optimize edilmiş başlık ve açıklamalar oluştur.
-- ALTERNATİF BAŞLIKLAR: Google News ve tıklanma oranı (CTR) için optimize edilmiş, merak uyandıran 3 farklı alternatif başlık üret.
+SEO VE YAZIM:
+- Başlık anahtar kelime ile başlamalı.
+- SPOT: En önemli bilgiyi özetleyen vurucu giriş.
+- PARAGRAF YAPISI: Haber metnini (body) mutlaka anlamlı paragraflara böl. Paragraflar arasında mutlaka çift satır boşluğu (\n\n) bırak.
+- ARA BAŞLIKLAR: 2-4 adet, TAMAMI BÜYÜK HARF. Paragrafların arasına serpiştir.
+- DİL: Tarafsız, 3. tekil şahıs. Hukuki riskli durumlarda "iddia edildi" gibi esnek ifadeler kullan.
 
-────────────────────────────────────────────────────────────────
-3. KALİTE DENETİMİ VE METRİKLER:
-────────────────────────────────────────────────────────────────
-- SEO GÜCÜ: Anahtar kelime kullanımı, meta veriler ve yapısal SEO'yu değerlendir.
-- ÖZGÜNLÜK: Metnin ham veriden ne kadar farklılaştığını ve "takla attırıldığını" açıkla.
-- OKUNABİLİRLİK: Ateşman skoru üzerinden metnin karmaşıklığını ve akıcılığını değerlendir.
-- HER METRİK İÇİN: "explanation" alanlarında bu puanın neden verildiğini ve nasıl daha iyi olabileceğini detaylıca açıkla.
+TON ÖZELLİKLERİ:
+A) SEO UYUMLU ÖZGÜN HABER: Nesnel, ciddi, sentence case başlık. Bilgilendirici ve otoriter dil.
+B) ULUSAL MEDYA TİPİ TIK ODAKLI: 
+   - BAŞLIK: Tıklama odaklı (Clickbait), merak uyandıran, soru cümleleri içeren, SEO anahtar kelimeleriyle zenginleştirilmiş uzun ve vurucu başlıklar. 
+   - ÖRNEK BAŞLIK YAPISI: "X ne zaman? X saat kaçta? İşte X ile ilgili tüm detaylar!", "X belli oldu mu? X için geri sayım başladı!"
+   - KURGU: Okuyucuyu içeri çekmek için "merak boşluğu" (curiosity gap) yarat. 
+   - İÇERİK: Bilgiyi hemen verme, okuyucuyu metnin sonuna kadar tutacak bir akış kur.
+
+ÇIKTI: JSON formatında; headline, spot, body ve talep edilen gelişmiş analiz alanlarını döndür.
 `;

@@ -26,7 +26,7 @@ export const ChatBot: React.FC = () => {
   const toggleChat = () => {
     if (!isOpen && !chatSessionRef.current) {
       chatSessionRef.current = createChatSession();
-      setMessages([{ role: 'model', text: 'Merhaba! Ben Haber Asistanınız. Haber yazımı, SEO veya gazetecilik üzerine merak ettiğiniz her şeyi sorabilirsiniz.' }]);
+      setMessages([{ role: 'model', text: 'Merhaba! Ben Vakanüvis AI. Haberin dijital hafızası ve geleceğin kalemi olarak, haber yazımı, SEO veya gazetecilik üzerine merak ettiğiniz her şeyi sorabilirsiniz.' }]);
     }
     setIsOpen(!isOpen);
   };
@@ -64,16 +64,16 @@ export const ChatBot: React.FC = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="absolute bottom-18 right-0 w-[380px] h-[550px] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="absolute bottom-18 right-0 w-[380px] h-[550px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
           {/* Header */}
-          <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+          <div className="p-4 bg-slate-900 dark:bg-slate-950 text-white flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h3 className="text-sm font-bold">Editör Asistanı</h3>
-                <p className="text-[10px] text-slate-400 font-medium">Gemini Pro 3 Destekli</p>
+                <h3 className="text-sm font-bold">Vakanüvis AI</h3>
+                <p className="text-[10px] text-slate-400 font-medium">Geleceğin Kalemi</p>
               </div>
             </div>
             <button onClick={toggleChat} className="text-slate-400 hover:text-white transition-colors">
@@ -84,14 +84,14 @@ export const ChatBot: React.FC = () => {
           {/* Messages */}
           <div 
             ref={scrollRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 custom-scrollbar"
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950 custom-scrollbar"
           >
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] p-3 rounded-2xl text-sm leading-relaxed ${
                   msg.role === 'user' 
                   ? 'bg-blue-600 text-white rounded-tr-none' 
-                  : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-sm'
+                  : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-tl-none shadow-sm'
                 }`}>
                   <div className="flex items-center space-x-2 mb-1 opacity-70">
                     {msg.role === 'model' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
@@ -103,34 +103,34 @@ export const ChatBot: React.FC = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center space-x-2">
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center space-x-2">
                   <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                  <span className="text-xs text-slate-400 font-medium italic">Editör düşünüyor...</span>
+                  <span className="text-xs text-slate-400 dark:text-slate-500 font-medium italic">Editör düşünüyor...</span>
                 </div>
               </div>
             )}
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSend} className="p-4 border-t border-slate-100 bg-white">
+          <form onSubmit={handleSend} className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
             <div className="relative">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Bir şey sorun..."
-                className="w-full pl-4 pr-12 py-3 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-600/20 outline-none transition-all placeholder-slate-400"
+                className="w-full pl-4 pr-12 py-3 bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-600/20 outline-none transition-all placeholder-slate-400 dark:placeholder-slate-500 dark:text-white"
                 disabled={isLoading}
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${input.trim() && !isLoading ? 'text-blue-600 hover:bg-blue-50' : 'text-slate-300'}`}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${input.trim() && !isLoading ? 'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30' : 'text-slate-300 dark:text-slate-700'}`}
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-[9px] text-slate-400 mt-2 text-center uppercase tracking-widest font-bold">Gazetecilik & SEO Uzmanı</p>
+            <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-2 text-center uppercase tracking-widest font-bold">Gazetecilik & SEO Uzmanı</p>
           </form>
         </div>
       )}
