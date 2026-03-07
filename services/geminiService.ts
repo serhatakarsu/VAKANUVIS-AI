@@ -1,9 +1,15 @@
 
-import { GoogleGenAI, Type, Chat, ThinkingLevel } from "@google/genai";
+import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { GeneratedNews, SYSTEM_INSTRUCTION, NewsMode, HeadlineRefinement, SpotRefinement, NewsTone, AdvancedFeatures } from "../types";
 
 // Initialize the Gemini client inside functions to pick up latest API key
-const getAiClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const getAiClient = () => {
+  const apiKey = (process.env.API_KEY || process.env.GEMINI_API_KEY || '').trim();
+  if (!apiKey) {
+    throw new Error('Gemini API anahtarı bulunamadı. Lütfen proje ve API anahtar ayarlarını kontrol edin.');
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 /**
  * Helper to perform exponential backoff retries for 503/UNAVAILABLE errors.
@@ -70,9 +76,20 @@ const extractJson = (text: string) => {
   }
 };
 
+const sanitizeUserInput = (text: string) => {
+  const normalized = text.replace(/\u0000/g, '').trim();
+  const maxLength = 8000;
+  return normalized.length > maxLength ? normalized.slice(0, maxLength) : normalized;
+};
+
 export const generateNewsContent = async (rawText: string, mode: NewsMode, tone: NewsTone, features: AdvancedFeatures): Promise<GeneratedNews> => {
   const ai = getAiClient();
-  
+  const sanitizedText = sanitizeUserInput(rawText);
+
+  if (!sanitizedText) {
+    throw new Error('Haber üretimi için geçerli bir içerik girin.');
+  }
+
   const callApi = async (modelName: string) => {
     const properties: any = {
       headline: { type: Type.STRING },
@@ -371,7 +388,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
 
     const response = await ai.models.generateContent({
       model: modelName,
-      contents: `Seçilen Haber Modu: ${mode}\nSeçilen Ton: ${tone}\n\nAKTİF GELİŞMİŞ ÖZELLİKLER:${extraInstructions || "\nYok (Sadece haber metni üret)"}\n\nHam Metin/Notlar:\n${rawText}`,
+      contents: `Seçilen Haber Modu: ${mode}\nSeçilen Ton: ${tone}\n\nAKTİF GELİŞMİŞ ÖZELLİKLER:${extraInstructions || "\nYok (Sadece haber metni üret)"}\n\nHam Metin/Notlar:\n${sanitizedText}`,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         tools: [{ googleSearch: {} }],
@@ -427,7 +444,6 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
 
 export const refineHeadline = async (currentHeadline: string, newsBody: string, tone: NewsTone): Promise<HeadlineRefinement> => {
   const ai = getAiClient();
-  
   const callApi = async (modelName: string) => {
     const response = await ai.models.generateContent({
       model: modelName,
@@ -491,7 +507,6 @@ ${tone === 'SEO Uyumlu Özgün Haber' ? `
 
 export const refineSpot = async (currentSpot: string, newsBody: string, tone: NewsTone): Promise<SpotRefinement> => {
   const ai = getAiClient();
-  
   const callApi = async (modelName: string) => {
     const isOfficial = tone === 'SEO Uyumlu Özgün Haber';
     const response = await ai.models.generateContent({
@@ -553,7 +568,6 @@ ${isOfficial ? `
 
 export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promise<string> => {
   const ai = getAiClient();
-  
   const callApi = async (modelName: string) => {
     const response = await ai.models.generateContent({
       model: modelName,

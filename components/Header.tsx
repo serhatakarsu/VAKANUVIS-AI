@@ -72,8 +72,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenHistory, isDarkMode, onTog
             <div className="relative">
               <button 
                 onClick={onToggleTheme}
-                className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+                className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
                 title={isDarkMode ? "Aydınlık Mod" : "Karanlık Mod"}
+                aria-label={isDarkMode ? "Aydınlık moda geç" : "Karanlık moda geç"}
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>

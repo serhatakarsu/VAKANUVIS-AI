@@ -12,6 +12,17 @@ import {
 import { GeneratedNews, HeadlineRefinement, SpotRefinement, NewsTone } from '../types';
 import { refineHeadline, refineSpot, refineSubheadings } from '../services/geminiService';
 
+
+const getSafeExternalUrl = (value?: string) => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
+  } catch (_e) {
+    return null;
+  }
+};
+
 interface OutputSectionProps {
   news: GeneratedNews | null;
   isEmpty: boolean;
@@ -343,18 +354,23 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                     <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900">Doğrulanmış Kaynaklar</h3>
                   </div>
                   <div className="flex flex-wrap gap-4">
-                    {editedNews.groundingChunks.map((chunk, i) => chunk.web && (
-                      <a 
-                        key={i} 
-                        href={chunk.web.uri} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center space-x-3 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-900 px-5 py-3 rounded-2xl transition-all group shadow-sm"
-                      >
-                        <LinkIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-900" />
-                        <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 truncate max-w-[300px]">{chunk.web.title || "Haber Kaynağı"}</span>
-                      </a>
-                    ))}
+                    {editedNews.groundingChunks.map((chunk, i) => {
+                      const safeUri = getSafeExternalUrl(chunk.web?.uri);
+                      if (!chunk.web || !safeUri) return null;
+
+                      return (
+                        <a 
+                          key={i} 
+                          href={safeUri} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center space-x-3 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-900 px-5 py-3 rounded-2xl transition-all group shadow-sm"
+                        >
+                          <LinkIcon className="w-4 h-4 text-slate-400 group-hover:text-slate-900" />
+                          <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 truncate max-w-[300px]">{chunk.web.title || "Haber Kaynağı"}</span>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
               )}
