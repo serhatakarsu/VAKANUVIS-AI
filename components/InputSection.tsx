@@ -1,5 +1,5 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Eraser, Sparkles, FileInput, Info, Trash2, Hash, TrendingUp, MessageSquare, Feather, Settings2, ChevronDown, ChevronUp, Zap, Video, Image as ImageIcon, Search, History, Globe, Calendar, Database, ShieldCheck, Share2, MousePointer2, RefreshCw, Loader2, Mic, MicOff } from 'lucide-react';
 import { NewsMode, NEWS_MODES, MODE_DESCRIPTIONS, EXAMPLE_INPUT_TEXT, NewsTone, NEWS_TONES, TONE_DESCRIPTIONS, AdvancedFeatures } from '../types';
 
@@ -38,6 +38,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const handleInsertExample = () => onChange(EXAMPLE_INPUT_TEXT);
 
@@ -48,18 +49,23 @@ export const InputSection: React.FC<InputSectionProps> = ({
     }
 
     if (isListening) {
+      recognitionRef.current?.stop?.();
       setIsListening(false);
       return;
     }
 
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).speechRecognition;
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     recognition.lang = 'tr-TR';
     recognition.continuous = true;
     recognition.interimResults = true;
 
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
     recognition.onerror = () => setIsListening(false);
 
     recognition.onresult = (event: any) => {
@@ -317,6 +323,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
              onClick={toggleListening}
              className={`p-2 rounded-full transition-all shadow-lg ${isListening ? 'bg-rose-500 text-white animate-pulse' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-blue-600 border border-slate-100 dark:border-slate-700'}`}
              title={isListening ? 'Dinlemeyi Durdur' : 'Sesli Giriş'}
+             aria-label={isListening ? 'Sesli girişi durdur' : 'Sesli girişi başlat'}
            >
              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
            </button>
@@ -325,7 +332,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Vakanüvis için haber notlarını, ajans metnini veya ham verileri buraya yapıştırın..."
-          className="flex-1 w-full resize-none outline-none text-slate-800 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 text-lg leading-relaxed bg-transparent font-serif"
+          className="flex-1 w-full resize-none outline-none text-slate-800 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 text-lg leading-relaxed bg-transparent font-serif focus-visible:ring-2 focus-visible:ring-blue-500/30 rounded-xl p-2 -m-2"
           disabled={isLoading}
         />
         

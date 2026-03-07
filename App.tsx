@@ -48,8 +48,22 @@ const LOADING_STEPS = [
 const generateId = () => {
   try {
     return crypto.randomUUID();
-  } catch (e) {
-    return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+  } catch (_e) {
+    const seed = `${Date.now()}-${navigator.userAgent}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = (hash << 5) - hash + seed.charCodeAt(i);
+      hash |= 0;
+    }
+    return `id-${Date.now().toString(36)}-${Math.abs(hash).toString(36)}`;
+  }
+};
+
+const createToastId = () => {
+  try {
+    return crypto.randomUUID();
+  } catch (_e) {
+    return `toast-${Date.now().toString(36)}`;
   }
 };
 
@@ -99,20 +113,22 @@ function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | null = null;
     if (appState === AppState.LOADING) {
       setLoadingStep(0);
       interval = setInterval(() => {
         setLoadingStep(prev => (prev < LOADING_STEPS.length - 1 ? prev + 1 : prev));
       }, 800); // Advance step every 0.8s for a smoother feel
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [appState]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    const id = Math.random().toString(36).substr(2, 9);
+    const id = createToastId();
     setToasts(prev => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
@@ -226,7 +242,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-b from-[#F8FAFC] via-[#F8FAFC] to-[#EFF6FF] dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-300">
       <Header onOpenHistory={() => setIsHistoryOpen(true)} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} />
       
       {isKeyMissing && (
@@ -237,7 +253,7 @@ function App() {
           </div>
           <div className="flex items-center space-x-3">
             <button onClick={handleKeySelect} className="bg-white text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-blue-50 transition-colors">PROJE SEÇ</button>
-            <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[9px] underline flex items-center opacity-80 hover:opacity-100">Faturalandırma <ExternalLink className="w-2 h-2 ml-1" /></a>
+            <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-[9px] underline flex items-center opacity-80 hover:opacity-100">Faturalandırma <ExternalLink className="w-2 h-2 ml-1" /></a>
           </div>
         </div>
       )}
