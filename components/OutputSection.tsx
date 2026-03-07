@@ -20,7 +20,7 @@ interface OutputSectionProps {
 }
 
 export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onArchive, selectedTone }) => {
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<'all' | 'headline' | 'spot' | 'body' | null>(null);
   const [activeTab, setActiveTab] = useState<'resmi' | 'seo_panel' | 'comparison' | 'advanced'>('resmi');
   const [editedNews, setEditedNews] = useState<GeneratedNews | null>(null);
   const [showHeadlineAlts, setShowHeadlineAlts] = useState(false);
@@ -43,20 +43,21 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
     }
   }, [news]);
 
-  const handleCopy = () => {
-    if (!editedNews) return;
-    const fullText = `${editedNews.headline}\n\n${editedNews.spot}\n\n${editedNews.body}`;
-    navigator.clipboard.writeText(fullText).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const copyWithFeedback = (text: string, key: 'all' | 'headline' | 'spot' | 'body') => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
     });
   };
 
+  const handleCopyAll = () => {
+    if (!editedNews) return;
+    const fullText = `${editedNews.headline}\n\n${editedNews.spot}\n\n${editedNews.body}`;
+    copyWithFeedback(fullText, 'all');
+  };
+
   const handleCopyField = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(text);
   };
 
   const applyHeadline = (newHeadline: string) => {
@@ -237,9 +238,9 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                 </div>
                 <div className="flex space-x-2">
                   <button onClick={onArchive} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all" title="Arşivle"><Archive className="w-3.5 h-3.5"/></button>
-                  <button onClick={handleCopy} className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-[9px] font-black transition-all border ${copied ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700'}`}>
-                    {copied ? <Check className="w-2.5 h-2.5 mr-1.5"/> : <Copy className="w-2.5 h-2.5 mr-1.5"/>}
-                    {copied ? 'KOPYALANDI' : 'KOPYALA'}
+                  <button onClick={handleCopyAll} className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-[9px] font-black transition-all border ${copiedKey === 'all' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700'}`}>
+                    {copiedKey === 'all' ? <Check className="w-2.5 h-2.5 mr-1.5"/> : <Copy className="w-2.5 h-2.5 mr-1.5"/>}
+                    {copiedKey === 'all' ? 'TÜMÜ KOPYALANDI' : 'TÜM METNİ KOPYALA'}
                   </button>
                 </div>
               </div>
@@ -249,6 +250,16 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                 <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white mb-8 leading-[1.15] tracking-tight font-sans text-balance decoration-clone">
                   <span className="mr-4">{selectedTone === 'SEO Uyumlu Özgün Haber' ? '🟦' : '🟥'}</span>{editedNews.headline}
                 </h1>
+
+                <div className="mb-6 flex justify-end">
+                  <button
+                    onClick={() => copyWithFeedback(editedNews.headline, 'headline')}
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] border transition-all ${copiedKey === 'headline' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-blue-600 hover:border-blue-200 dark:hover:border-blue-700'}`}
+                  >
+                    {copiedKey === 'headline' ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+                    <span>{copiedKey === 'headline' ? 'Başlık Kopyalandı' : 'Başlığı Kopyala'}</span>
+                  </button>
+                </div>
                 
                 <div className="flex items-center space-x-2 mb-8">
                   <button onClick={handleToggleRefineHeadline} className="flex items-center space-x-1.5 text-blue-600 hover:text-blue-700 font-bold text-[9px] uppercase tracking-wider bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-all">
@@ -311,6 +322,16 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                     <span className="font-black text-slate-900 not-italic mr-2">SPOT:</span>
                     {editedNews.spot}
                  </div>
+
+                 <div className="mt-4 flex justify-end">
+                   <button
+                     onClick={() => copyWithFeedback(editedNews.spot, 'spot')}
+                     className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] border transition-all ${copiedKey === 'spot' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-blue-600 hover:border-blue-200 dark:hover:border-blue-700'}`}
+                   >
+                     {copiedKey === 'spot' ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+                     <span>{copiedKey === 'spot' ? 'Spot Kopyalandı' : 'Spotu Kopyala'}</span>
+                   </button>
+                 </div>
                  
                  <div className="mt-5 flex items-center">
                     <button onClick={handleToggleRefineSpot} className="flex items-center space-x-1.5 text-slate-400 hover:text-blue-600 font-black text-[9px] uppercase tracking-[0.15em] transition-all hover:bg-slate-50 px-3 py-1.5 rounded-full border border-transparent hover:border-slate-100">
@@ -322,7 +343,14 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
 
               {/* Body */}
               <div className="news-content-area select-text text-slate-800">
-                <div className="mb-6 flex justify-end">
+                <div className="mb-6 flex justify-end gap-2">
+                  <button
+                    onClick={() => copyWithFeedback(editedNews.body, 'body')}
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.15em] border transition-all ${copiedKey === 'body' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-blue-600 hover:border-blue-200 dark:hover:border-blue-700'}`}
+                  >
+                    {copiedKey === 'body' ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+                    <span>{copiedKey === 'body' ? 'Body Kopyalandı' : 'Body Kopyala'}</span>
+                  </button>
                   <button 
                     onClick={handleOptimizeSubheadings} 
                     disabled={isRefiningSubheadings}
