@@ -6,7 +6,7 @@ import { OutputSection } from './components/OutputSection';
 import { HistoryDrawer } from './components/HistoryDrawer';
 import { ChatBot } from './components/ChatBot';
 import { generateNewsContent } from './services/geminiService';
-import { GeneratedNews, AppState, NewsMode, NEWS_MODES, SavedItem, NewsTone, NEWS_TONES, AdvancedFeatures, DEFAULT_ADVANCED_FEATURES } from './types';
+import { GeneratedNews, AppState, NewsMode, NEWS_MODES, SavedItem, NewsTone, NEWS_TONES, AdvancedFeatures, DEFAULT_ADVANCED_FEATURES, NewsConfig, DEFAULT_NEWS_CONFIG } from './types';
 import { addItemToHistory, getHistory, deleteItemFromHistory } from './services/storage';
 import { KeyRound, ExternalLink, AlertCircle, RefreshCw, Loader2, Feather, CheckCircle2, Info, X, Sparkles, Zap, ShieldCheck, Globe, TrendingUp, Search, History as HistoryIcon, MessageSquare } from 'lucide-react';
 
@@ -55,8 +55,19 @@ const generateId = () => {
 
 function App() {
   const [inputText, setInputText] = useState('');
-  const [newsMode, setNewsMode] = useState<NewsMode>(NEWS_MODES[0]);
-  const [newsTone, setNewsTone] = useState<NewsTone>(NEWS_TONES[0]);
+  const [newsConfig, setNewsConfig] = useState<NewsConfig>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vakanuvis_news_config');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return DEFAULT_NEWS_CONFIG;
+        }
+      }
+    }
+    return DEFAULT_NEWS_CONFIG;
+  });
   const [advancedFeatures, setAdvancedFeatures] = useState<AdvancedFeatures>(DEFAULT_ADVANCED_FEATURES);
   const [generatedNews, setGeneratedNews] = useState<GeneratedNews | null>(null);
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
@@ -109,6 +120,10 @@ function App() {
     return () => clearInterval(interval);
   }, [appState]);
 
+  useEffect(() => {
+    localStorage.setItem('vakanuvis_news_config', JSON.stringify(newsConfig));
+  }, [newsConfig]);
+
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -137,7 +152,7 @@ function App() {
     setErrorMessage(null);
 
     try {
-      const news = await generateNewsContent(text, newsMode, newsTone, advancedFeatures);
+      const news = await generateNewsContent(text, newsConfig.mode, newsConfig.tone, advancedFeatures);
       setGeneratedNews(news);
       setAppState(AppState.SUCCESS);
       addToast("Haber başarıyla oluşturuldu!", "success");
@@ -147,7 +162,7 @@ function App() {
         timestamp: Date.now(),
         status: 'active',
         input: text,
-        mode: newsMode,
+        mode: newsConfig.mode,
         output: news
       };
       setHistoryItems(addItemToHistory(newItem));
@@ -159,7 +174,14 @@ function App() {
       const errorMessage = error.message || "";
       const errorStatus = error.status || error.code || 0;
       
-      if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand')) {
+      if (errorMessage.includes('spending cap')) {
+        setErrorMessage("Seçili projenin harcama limiti (spending cap) dolmuş. Lütfen Google Cloud konsolundan limiti artırın veya 'PROJE SEÇ' butonuyla başka bir proje seçin.");
+        setIsKeyMissing(true);
+      } else if (errorMessage.includes('quota') || errorMessage.includes('429')) {
+        setErrorMessage("API kullanım kotası aşıldı. Lütfen bir süre bekleyip tekrar deneyin veya farklı bir proje seçmeyi deneyin.");
+      } else if (errorMessage.includes('timeout') || errorMessage.includes('deadline')) {
+        setErrorMessage("İstek zaman aşımına uğradı. İnternet bağlantınızı kontrol edip tekrar deneyin.");
+      } else if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand')) {
         setErrorMessage("Sistem şu an çok yoğun. Birkaç saniye sonra tekrar denerseniz size yardımcı olabilirim.");
       } else if (errorStatus === 500 || errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
         setErrorMessage("API Hatası (500). Lütfen 'Proje Seç' butonuna tıklayarak geçerli bir proje seçtiğinizden emin olun.");
@@ -181,7 +203,7 @@ function App() {
       timestamp: Date.now(),
       status: 'archived',
       input: text,
-      mode: newsMode,
+      mode: newsConfig.mode,
       output: generatedNews
     };
     setHistoryItems(addItemToHistory(newItem));
@@ -199,7 +221,7 @@ function App() {
         timestamp: Date.now(),
         status: 'trashed',
         input: text,
-        mode: newsMode,
+        mode: newsConfig.mode,
         output: generatedNews
       };
       setHistoryItems(addItemToHistory(newItem));
@@ -207,11 +229,13 @@ function App() {
     setInputText('');
     setGeneratedNews(null);
     setAppState(AppState.IDLE);
+    setNewsConfig(DEFAULT_NEWS_CONFIG);
+    addToast("Form temizlendi.", "info");
   };
 
   const handleRestore = (item: SavedItem) => {
     setInputText(item.input);
-    setNewsMode(item.mode);
+    setNewsConfig(prev => ({ ...prev, mode: item.mode }));
     setGeneratedNews(item.output);
     setAppState(item.output ? AppState.SUCCESS : AppState.IDLE);
     setIsHistoryOpen(false);
@@ -288,10 +312,10 @@ function App() {
             <InputSection 
               value={inputText} 
               onChange={setInputText} 
-              selectedMode={newsMode} 
-              onModeChange={setNewsMode} 
-              selectedTone={newsTone} 
-              onToneChange={setNewsTone} 
+              selectedMode={newsConfig.mode} 
+              onModeChange={(mode) => setNewsConfig(prev => ({ ...prev, mode }))} 
+              selectedTone={newsConfig.tone} 
+              onToneChange={(tone) => setNewsConfig(prev => ({ ...prev, tone }))} 
               advancedFeatures={advancedFeatures}
               onAdvancedFeatureChange={handleAdvancedFeatureChange}
               onClear={handleClear} 
@@ -300,7 +324,7 @@ function App() {
             />
           </div>
           <div className="lg:col-span-7 h-full min-h-[600px] lg:min-h-0">
-            <OutputSection news={generatedNews} isEmpty={appState === AppState.IDLE || (appState === AppState.LOADING && !generatedNews)} onArchive={handleArchive} selectedTone={newsTone} />
+            <OutputSection news={generatedNews} isEmpty={appState === AppState.IDLE || (appState === AppState.LOADING && !generatedNews)} onArchive={handleArchive} selectedTone={newsConfig.tone} />
           </div>
         </div>
       </main>

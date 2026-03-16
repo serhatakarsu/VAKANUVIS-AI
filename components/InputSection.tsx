@@ -101,26 +101,27 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const wordCount = useMemo(() => value.trim() ? value.trim().split(/\s+/).length : 0, [value]);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-white/50 dark:border-slate-800 flex flex-col h-full overflow-hidden transition-all duration-300 ring-1 ring-slate-100 dark:ring-slate-800">
+    <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 flex flex-col h-full overflow-hidden transition-all duration-300">
       
       {/* Header Area */}
-      <div className="p-5 px-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="p-5 px-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Feather className="w-4 h-4 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-blue-600 flex items-center justify-center shadow-lg">
+            <Feather className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-[0.2em]">Vakanüvis Editör Masası</h2>
+          <div className="flex flex-col">
+            <h2 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Editör Masası</h2>
+            <span className="text-xs font-bold text-slate-900 dark:text-white">VAKANÜVİS KONTROL PANELİ</span>
+          </div>
         </div>
-        {value.length > 0 && (
-          <button 
-            onClick={onClear} 
-            className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all" 
-            title="Temizle" 
-            disabled={isLoading}
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        )}
+        <button 
+          onClick={onClear} 
+          className="p-2.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all border border-transparent hover:border-rose-100" 
+          title="Tümünü Temizle ve Sıfırla" 
+          disabled={isLoading}
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Config Area */}
@@ -311,21 +312,21 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </div>
       
       {/* Text Area */}
-      <div className="flex-1 p-6 relative group bg-white dark:bg-slate-900 flex flex-col border-t border-slate-100 dark:border-slate-800 min-h-[300px]">
-        <div className="absolute top-4 right-4 z-10 flex space-x-2">
+      <div className="flex-1 p-8 relative group bg-white dark:bg-slate-900 flex flex-col border-t border-slate-200 dark:border-slate-800 min-h-[350px]">
+        <div className="absolute top-6 right-6 z-10 flex space-x-2">
            <button
              onClick={toggleListening}
-             className={`p-2 rounded-full transition-all shadow-lg ${isListening ? 'bg-rose-500 text-white animate-pulse' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-blue-600 border border-slate-100 dark:border-slate-700'}`}
+             className={`p-3 rounded-2xl transition-all shadow-xl border ${isListening ? 'bg-rose-500 text-white border-rose-600 animate-pulse' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-blue-600 border-slate-200 dark:border-slate-700'}`}
              title={isListening ? 'Dinlemeyi Durdur' : 'Sesli Giriş'}
            >
-             {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
            </button>
         </div>
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Vakanüvis için haber notlarını, ajans metnini veya ham verileri buraya yapıştırın..."
-          className="flex-1 w-full resize-none outline-none text-slate-800 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 text-lg leading-relaxed bg-transparent font-serif"
+          className="flex-1 w-full resize-none outline-none text-slate-800 dark:text-slate-200 placeholder-slate-300 dark:placeholder-slate-600 text-xl leading-relaxed bg-transparent font-serif custom-scrollbar"
           disabled={isLoading}
         />
         

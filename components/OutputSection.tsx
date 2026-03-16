@@ -43,7 +43,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
     }
   }, [news]);
 
-  const handleCopy = () => {
+  const handleCopyFull = () => {
     if (!editedNews) return;
     const fullText = `${editedNews.headline}\n\n${editedNews.spot}\n\n${editedNews.body}`;
     navigator.clipboard.writeText(fullText).then(() => {
@@ -52,7 +52,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
     });
   };
 
-  const handleCopyField = (text: string) => {
+  const handleCopyField = (text: string, fieldName: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -130,34 +130,30 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
   }
 
   const renderBody = (text: string) => {
-    const blocks = text.split(/\n+/).filter(line => line.trim().length > 0);
+    // Split by double newlines to identify paragraphs and subheadings
+    const blocks = text.split(/\n\s*\n/).filter(b => b.trim().length > 0);
     
-    return blocks.map((line, index) => {
-      let trimmedLine = line.trim();
+    return blocks.map((block, index) => {
+      let trimmedLine = block.trim();
       
       const isMarkdownH2 = trimmedLine.startsWith('## ');
       const isMarkdownH3 = trimmedLine.startsWith('### ');
-      const isLegacyHeader = !isMarkdownH2 && !isMarkdownH3 && trimmedLine === trimmedLine.toUpperCase() && trimmedLine.length > 5 && trimmedLine.length < 120;
+      // Improved header detection: All caps, not too long, not too short
+      const isLegacyHeader = !isMarkdownH2 && !isMarkdownH3 && 
+                            trimmedLine === trimmedLine.toUpperCase() && 
+                            trimmedLine.length > 5 && 
+                            trimmedLine.length < 120 &&
+                            !trimmedLine.includes('.'); // Headers usually don't end with a period
 
       if (isMarkdownH2 || isMarkdownH3 || isLegacyHeader) {
         const rawText = trimmedLine.replace(/^#+\s+/, '');
         const displayText = rawText.toLocaleUpperCase('tr-TR');
         
-        if (isMarkdownH3) {
-            return (
-              <div key={index} className="mt-12 mb-8">
-                <h3 className="text-lg md:text-xl font-bold text-slate-800 font-sans tracking-tight border-l-4 border-slate-400 pl-4 py-1 uppercase">
-                  {displayText}
-                </h3>
-              </div>
-            );
-        }
-
         return (
-          <div key={index} className="mt-20 mb-12">
-            <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white font-sans tracking-tight border-l-[12px] border-blue-600 dark:border-blue-500 pl-8 py-3 leading-tight uppercase bg-slate-50/50 dark:bg-slate-800/30 rounded-r-xl">
+          <div key={index} className="mt-10 mb-6">
+            <h3 className="text-lg md:text-xl font-black text-slate-900 dark:text-white font-sans tracking-tight border-l-4 border-blue-600 pl-4 py-1 uppercase bg-slate-50/50 dark:bg-slate-800/30 rounded-r-lg">
               {displayText}
-            </h2>
+            </h3>
           </div>
         );
       }
@@ -167,10 +163,10 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
         return (
           <blockquote 
             key={index}
-            className="my-14 pl-10 pr-8 py-8 bg-blue-50/40 dark:bg-blue-900/10 border-l-[10px] border-blue-600 dark:border-blue-500 rounded-r-3xl relative overflow-hidden group"
+            className="my-10 pl-8 pr-6 py-6 bg-blue-50/40 dark:bg-blue-900/10 border-l-[6px] border-blue-600 dark:border-blue-500 rounded-r-2xl relative overflow-hidden group"
           >
-            <Quote className="absolute -top-2 -left-2 w-20 h-20 text-blue-600/5 dark:text-blue-400/5 transform -rotate-12" />
-            <p className="text-2xl md:text-3xl font-serif font-bold italic text-slate-800 dark:text-slate-200 leading-relaxed relative z-10">
+            <Quote className="absolute -top-2 -left-2 w-16 h-16 text-blue-600/5 dark:text-blue-400/5 transform -rotate-12" />
+            <p className="text-xl md:text-2xl font-serif font-bold italic text-slate-800 dark:text-slate-200 leading-relaxed relative z-10">
               {trimmedLine}
             </p>
           </blockquote>
@@ -180,7 +176,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
       return (
         <p 
           key={index} 
-          className="mb-8 text-justify text-slate-700 dark:text-slate-300 leading-relaxed text-lg md:text-xl font-serif antialiased whitespace-pre-line"
+          className="mb-6 text-justify text-slate-700 dark:text-slate-300 leading-relaxed text-lg md:text-xl font-serif antialiased"
         >
           {trimmedLine}
         </p>
@@ -206,15 +202,33 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
     <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 flex flex-col h-full overflow-hidden ring-1 ring-slate-100 dark:ring-slate-800">
       
       {/* Top Nav */}
-      <div className="flex border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-1 overflow-x-auto no-scrollbar whitespace-nowrap">
-        <button onClick={() => setActiveTab('resmi')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'resmi' ? 'border-slate-900 dark:border-blue-500 text-slate-900 dark:text-blue-500' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>📄 RESMİ HABER</button>
-        {(editedNews.metaTitle || editedNews.seoClickPanel) && (
-          <button onClick={() => setActiveTab('seo_panel')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'seo_panel' ? 'border-slate-900 dark:border-blue-500 text-slate-900 dark:text-blue-500' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>📈 SEO & TIKLAMA PANELİ</button>
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-1">
+        <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap">
+          <button onClick={() => setActiveTab('resmi')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'resmi' ? 'border-slate-900 dark:border-blue-500 text-slate-900 dark:text-blue-500' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>📄 RESMİ HABER</button>
+          {(editedNews?.metaTitle || editedNews?.seoClickPanel) && (
+            <button onClick={() => setActiveTab('seo_panel')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'seo_panel' ? 'border-slate-900 dark:border-blue-500 text-slate-900 dark:text-blue-500' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>📈 SEO & TIKLAMA PANELİ</button>
+          )}
+          {editedNews?.comparison && (
+            <button onClick={() => setActiveTab('comparison')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'comparison' ? 'border-slate-900 dark:border-blue-500 text-slate-900 dark:text-blue-500' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>🔄 KARŞILAŞTIRMA</button>
+          )}
+          <button onClick={() => setActiveTab('advanced')} className={`pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'advanced' ? 'border-slate-900 dark:border-blue-500 text-slate-900 dark:text-blue-500' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>⚡ ANALİZ & DAĞITIM</button>
+        </div>
+        
+        {editedNews && (
+          <div className="flex items-center space-x-2 pb-2">
+            <div className={`flex items-center space-x-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100 transition-all duration-500 ${copied ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+              <Check className="w-3 h-3" />
+              <span className="text-[9px] font-black uppercase tracking-tighter">Kopyalandı</span>
+            </div>
+            <button 
+              onClick={handleCopyFull}
+              className="flex items-center space-x-2 bg-slate-900 dark:bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-lg shadow-slate-200 dark:shadow-none"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>TÜMÜNÜ KOPYALA</span>
+            </button>
+          </div>
         )}
-        {editedNews.comparison && (
-          <button onClick={() => setActiveTab('comparison')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'comparison' ? 'border-slate-900 dark:border-blue-500 text-slate-900 dark:text-blue-500' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>🔄 KARŞILAŞTIRMA</button>
-        )}
-        <button onClick={() => setActiveTab('advanced')} className={`pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'advanced' ? 'border-slate-900 dark:border-blue-500 text-slate-900 dark:text-blue-500' : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}>⚡ ANALİZ & DAĞITIM</button>
       </div>
       
       <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 custom-scrollbar">
@@ -237,7 +251,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                 </div>
                 <div className="flex space-x-2">
                   <button onClick={onArchive} className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all" title="Arşivle"><Archive className="w-3.5 h-3.5"/></button>
-                  <button onClick={handleCopy} className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-[9px] font-black transition-all border ${copied ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700'}`}>
+                  <button onClick={handleCopyFull} className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-[9px] font-black transition-all border ${copied ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700'}`}>
                     {copied ? <Check className="w-2.5 h-2.5 mr-1.5"/> : <Copy className="w-2.5 h-2.5 mr-1.5"/>}
                     {copied ? 'KOPYALANDI' : 'KOPYALA'}
                   </button>
@@ -246,9 +260,23 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
 
               {/* Headline */}
               <div className="relative mb-14 group">
-                <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white mb-8 leading-[1.15] tracking-tight font-sans text-balance decoration-clone">
-                  <span className="mr-4">{selectedTone === 'SEO Uyumlu Özgün Haber' ? '🟦' : '🟥'}</span>{editedNews.headline}
-                </h1>
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-1 rounded uppercase tracking-widest">BAŞLIK</span>
+                    </div>
+                    <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white leading-[1.1] tracking-tight font-sans text-balance">
+                      {editedNews.headline}
+                    </h1>
+                  </div>
+                  <button 
+                    onClick={() => handleCopyField(editedNews.headline, 'Başlık')}
+                    className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all opacity-0 group-hover:opacity-100 flex-shrink-0 ml-4"
+                    title="Başlığı Kopyala"
+                  >
+                    <Copy className="w-6 h-6" />
+                  </button>
+                </div>
                 
                 <div className="flex items-center space-x-2 mb-8">
                   <button onClick={handleToggleRefineHeadline} className="flex items-center space-x-1.5 text-blue-600 hover:text-blue-700 font-bold text-[9px] uppercase tracking-wider bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-all">
@@ -307,9 +335,20 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
 
               {/* Spot (Lead) */}
               <div className="mb-14 relative group">
-                 <div className="text-2xl md:text-3xl font-medium leading-[1.6] text-slate-600 font-serif italic border-l-[10px] border-blue-600 pl-8 py-3 text-justify bg-slate-50/30">
-                    <span className="font-black text-slate-900 not-italic mr-2">SPOT:</span>
-                    {editedNews.spot}
+                 <div className="relative">
+                   <div className="flex items-center space-x-2 mb-4">
+                      <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 px-2 py-1 rounded uppercase tracking-widest">SPOT</span>
+                    </div>
+                   <div className="text-2xl md:text-3xl font-medium leading-[1.5] text-slate-600 dark:text-slate-400 font-serif italic border-l-[8px] border-blue-600 pl-8 py-4 text-justify bg-slate-50/50 dark:bg-slate-800/20 rounded-r-2xl">
+                      {editedNews.spot}
+                   </div>
+                   <button 
+                      onClick={() => handleCopyField(editedNews.spot, 'Spot')}
+                      className="absolute top-12 right-4 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                      title="Spotu Kopyala"
+                    >
+                      <Copy className="w-5 h-5" />
+                    </button>
                  </div>
                  
                  <div className="mt-5 flex items-center">
@@ -321,18 +360,27 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
               </div>
 
               {/* Body */}
-              <div className="news-content-area select-text text-slate-800">
-                <div className="mb-6 flex justify-end">
+              <div className="news-content-area select-text text-slate-800 dark:text-slate-200 relative group/body px-0 md:px-0">
+                <div className="mb-8 flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-4">
+                  <button 
+                    onClick={() => handleCopyField(editedNews.body, 'Haber Metni')}
+                    className="flex items-center space-x-2 text-slate-400 hover:text-blue-600 font-black text-[9px] uppercase tracking-[0.15em] transition-all hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-1.5 rounded-full border border-transparent hover:border-slate-100 dark:hover:border-slate-700"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>Metni Kopyala</span>
+                  </button>
                   <button 
                     onClick={handleOptimizeSubheadings} 
                     disabled={isRefiningSubheadings}
-                    className="flex items-center space-x-1.5 text-blue-600 hover:text-blue-700 font-black text-[9px] uppercase tracking-[0.15em] transition-all bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full border border-blue-100 disabled:opacity-50"
+                    className="flex items-center space-x-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 font-black text-[9px] uppercase tracking-[0.15em] transition-all bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-900/50 disabled:opacity-50"
                   >
                     {isRefiningSubheadings ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <AlignLeft className="w-2.5 h-2.5" />}
                     <span>Ara Başlıkları SEO Uyumlu Güçlendir</span>
                   </button>
                 </div>
-                {renderBody(editedNews.body)}
+                <div className="text-xl md:text-2xl leading-[1.8] text-slate-800 dark:text-slate-200 font-serif text-justify space-y-8 selection:bg-blue-100 selection:text-blue-900">
+                   {renderBody(editedNews.body)}
+                </div>
               </div>
 
               {/* Sources */}
@@ -523,8 +571,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                               <div className="flex justify-between items-center mb-4">
                                  <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Meta Title (SEO Başlığı)</span>
                                  <div className="flex items-center space-x-2">
-                                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${editedNews.metaTitle.length > 60 ? 'bg-rose-500' : 'bg-emerald-500'}`}>{editedNews.metaTitle.length}/60</span>
-                                   <button onClick={() => handleCopyField(editedNews.metaTitle!)} className="p-1 hover:bg-white/10 rounded transition-colors"><Copy className="w-3 h-3" /></button>
+                                   <button onClick={() => handleCopyField(editedNews.metaTitle!, 'Meta Başlık')} className="p-1 hover:bg-white/10 rounded transition-colors"><Copy className="w-3 h-3" /></button>
                                  </div>
                               </div>
                               <div className="text-xl font-bold leading-tight text-white group-hover:text-blue-400 transition-colors">{editedNews.metaTitle}</div>
@@ -535,8 +582,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                               <div className="flex justify-between items-center mb-4">
                                  <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Meta Description (Açıklama)</span>
                                  <div className="flex items-center space-x-2">
-                                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${editedNews.metaDescription.length > 160 ? 'bg-rose-500' : 'bg-emerald-500'}`}>{editedNews.metaDescription.length}/160</span>
-                                   <button onClick={() => handleCopyField(editedNews.metaDescription!)} className="p-1 hover:bg-white/10 rounded transition-colors"><Copy className="w-3 h-3" /></button>
+                                   <button onClick={() => handleCopyField(editedNews.metaDescription!, 'Meta Açıklama')} className="p-1 hover:bg-white/10 rounded transition-colors"><Copy className="w-3 h-3" /></button>
                                  </div>
                               </div>
                               <div className="text-sm text-slate-300 leading-relaxed font-medium">{editedNews.metaDescription}</div>
@@ -547,7 +593,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                         <div className="pt-6 border-t border-white/5 relative group/field">
                            <div className="flex justify-between items-center mb-4">
                               <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">URL Slug (Kalıcı Bağlantı)</span>
-                              <button onClick={() => handleCopyField(editedNews.slug!)} className="p-1 hover:bg-white/10 rounded transition-colors"><Copy className="w-3 h-3" /></button>
+                              <button onClick={() => handleCopyField(editedNews.slug!, 'URL')} className="p-1 hover:bg-white/10 rounded transition-colors"><Copy className="w-3 h-3" /></button>
                            </div>
                            <div className="text-sm font-mono text-blue-400 break-all">{editedNews.slug}</div>
                         </div>

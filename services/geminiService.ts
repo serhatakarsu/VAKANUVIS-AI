@@ -1,24 +1,42 @@
 
 import { GoogleGenAI, Type, Chat, ThinkingLevel } from "@google/genai";
-import { GeneratedNews, SYSTEM_INSTRUCTION, NewsMode, HeadlineRefinement, SpotRefinement, NewsTone, AdvancedFeatures } from "../types";
+import { GeneratedNews, NewsMode, HeadlineRefinement, SpotRefinement, NewsTone, AdvancedFeatures } from "../types";
+import { buildPrompt } from "../src/prompts/promptBuilder";
 
 // Initialize the Gemini client inside functions to pick up latest API key
-const getAiClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const getAiClient = (forceFree = false) => {
+  const apiKey = forceFree 
+    ? (process.env.GEMINI_API_KEY || process.env.API_KEY || '') 
+    : (process.env.API_KEY || process.env.GEMINI_API_KEY || '');
+  return new GoogleGenAI({ apiKey });
+};
 
 /**
  * Helper to perform exponential backoff retries for 503/UNAVAILABLE errors.
  */
-const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
+const withRetry = async <T>(fn: (forceFree?: boolean) => Promise<T>, maxRetries = 3): Promise<T> => {
   let delay = 1000;
+  let forceFree = false;
+
   for (let i = 0; i < maxRetries; i++) {
     try {
-      return await fn();
+      return await fn(forceFree);
     } catch (error: any) {
+      const errorMessage = error?.message || String(error);
       const isRetryable = 
-        error?.message?.includes('503') || 
-        error?.message?.includes('UNAVAILABLE') || 
+        errorMessage.includes('503') || 
+        errorMessage.includes('UNAVAILABLE') || 
         error?.status === 503 || 
         error?.code === 503;
+
+      const isSpendingCap = errorMessage.includes('spending cap') || errorMessage.includes('RESOURCE_EXHAUSTED');
+
+      if (isSpendingCap && !forceFree && process.env.GEMINI_API_KEY) {
+        console.warn("Spending cap exceeded on primary key. Attempting fallback to platform free key...");
+        forceFree = true;
+        i--; // Don't count this as a retry attempt
+        continue;
+      }
 
       if (isRetryable && i < maxRetries - 1) {
         console.warn(`Gemini API 503 detected. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
@@ -71,9 +89,9 @@ const extractJson = (text: string) => {
 };
 
 export const generateNewsContent = async (rawText: string, mode: NewsMode, tone: NewsTone, features: AdvancedFeatures): Promise<GeneratedNews> => {
-  const ai = getAiClient();
-  
-  const callApi = async (modelName: string) => {
+  const callApi = async (modelName: string, forceFree = false) => {
+    const ai = getAiClient(forceFree);
+    
     const properties: any = {
       headline: { type: Type.STRING },
       spot: { type: Type.STRING },
@@ -373,9 +391,11 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
       model: modelName,
       contents: `Seçilen Haber Modu: ${mode}\nSeçilen Ton: ${tone}\n\nAKTİF GELİŞMİŞ ÖZELLİKLER:${extraInstructions || "\nYok (Sadece haber metni üret)"}\n\nHam Metin/Notlar:\n${rawText}`,
       config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        systemInstruction: buildPrompt(mode, tone, extraInstructions),
         tools: [{ googleSearch: {} }],
         responseMimeType: "application/json",
+        maxOutputTokens: 8192,
         responseSchema: {
           type: Type.OBJECT,
           properties,
@@ -406,6 +426,10 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
         throw new Error("İçerik telif hakkı korumalı bir metne çok benziyor. Lütfen farklı bir şekilde ifade edin.");
       }
 
+      if (finishReason === 'OTHER' || !finishReason) {
+        throw new Error("API kotası aşılmış olabilir veya istek zaman aşımına uğradı. Lütfen bir süre sonra tekrar deneyin.");
+      }
+
       throw new Error(`Model yanıt üretemedi (Sebep: ${finishReason || 'Bilinmiyor'}). Lütfen kısa bir süre sonra tekrar deneyin.`);
     }
     
@@ -417,39 +441,51 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     return result;
   };
 
-  try {
-    return await withRetry(() => callApi('gemini-3-flash-preview'));
-  } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    throw error;
-  }
+  const mainCall = async (forceFree = false) => {
+    try {
+      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree));
+    } catch (error: any) {
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes('spending cap') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+        throw error;
+      }
+      
+      console.warn("Flash model failed, falling back to Pro model...", error);
+      try {
+        return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree), 2);
+      } catch (proError: any) {
+        console.error("Gemini API Final Error:", proError);
+        throw proError;
+      }
+    }
+  };
+
+  return await mainCall();
 };
 
 export const refineHeadline = async (currentHeadline: string, newsBody: string, tone: NewsTone): Promise<HeadlineRefinement> => {
-  const ai = getAiClient();
-  
-  const callApi = async (modelName: string) => {
+  const callApi = async (modelName: string, forceFree = false) => {
+    const ai = getAiClient(forceFree);
     const response = await ai.models.generateContent({
       model: modelName,
       contents: `Mevcut Başlık: ${currentHeadline}\n\nHaber İçeriği (Özet): ${newsBody.slice(0, 800)}`,
       config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         systemInstruction: `Sen profesyonel bir haber editörüsün. Görevin, mevcut başlığı ${tone} moduna uygun 5 farklı alternatif başlığa dönüştürmektir. 
 
 Kurallar (${tone} Modu):
-${tone === 'SEO Uyumlu Özgün Haber' ? `
 1. BAŞLIK MÜHENDİSLİĞİ: Başlık net, bilgilendirici ama sıkıcı değil; kapsayıcı ve otoriter olmalı.
-2. FORMAT: Sadece İLK KELİMENİN İLK HARFİ BÜYÜK olmalıdır (Sentence case).
-3. NESNELLİK: Duygusal sıfatlardan, yorumlardan ve "süslü" kelimelerden tamamen kaçın.
-4. DİL: Ajans dili (AA, İHA, Reuters), nesnel ve edilgen yapı.
+2. FORMAT (KRİTİK): Başlıklarda yalnızca özel isimler ve cümlenin ilk kelimesi büyük harfle başlamalıdır. Diğer tüm kelimeler küçük harfle yazılmalıdır. (Sentence case + özel isimler).
+3. ANAHTAR KELİME: Anahtar kelimeyi mutlaka başlığın başına yerleştir.
+${tone === 'SEO Uyumlu Özgün Haber' ? `
+5. NESNELLİK: Duygusal sıfatlardan, yorumlardan ve "süslü" kelimelerden tamamen kaçın. Kaynak metinde olmayan yorumlayıcı çıkarımları (örn: "...olarak değerlendiriliyor") ekleme.
+6. GAZETE/PORTAL STİLİ: Büyük haber portalları ve gazetelerin (Hürriyet, Yenişafak, Medyascope, Dünya vb.) standartlarında; profesyonel, ilgi çekici ve bilgilendirici başlıklar üret. Haberdeki en vurucu beyanı veya tırnak içindeki ifadeyi tırnak içinde (" ") başlığa taşıyarak vurgula. Ajans dilinden (AA, İHA vb.) kaçın.
+7. DİL: Nesnel ama akıcı ve editoryal yapı.
 ` : `
-1. ULUSAL MEDYA STİLİ: Tıklama odaklı (Clickbait), merak uyandıran ve SEO anahtar kelimeleriyle zenginleştirilmiş başlıklar üret.
-2. SORU ODAKLI: "Saat kaçta?", "Ne zaman?", "Belli oldu mu?" gibi okuyucunun arama motorlarında sorduğu soruları başlığa taşı.
-3. ÖRNEK YAPILAR: 
-   - "5 Mart 2026 Perşembe Adana'da iftar ve sahur vakti saat kaçta? 5 Mart Adana sahur ve akşam ezanı saati belli oldu!"
-   - "İstanbul'da bu gece sahur vakti kaçta, imsak vakti ne zaman? İstanbul iftara ne kadar kaldı, ezan ne zaman okunacak?"
-4. GİZEM VE DİNAMİZM: Haberin sonucunu başlıkta verme, okuyucuyu tıklamaya zorla.
-`}
-4. SEO: Anahtar kelimeyi başlığın başına veya merkezine yerleştir.`,
+5. ULUSAL MEDYA STİLİ: Tıklama odaklı (Clickbait), merak uyandıran ve SEO anahtar kelimeleriyle zenginleştirilmiş başlıklar üret.
+6. SORU ODAKLI: "Saat kaçta?", "Ne zaman?", "Belli oldu mu?" gibi okuyucunun arama motorlarında sorduğu soruları başlığa taşı.
+7. GİZEM VE DİNAMİZM: Haberin sonucunu başlıkta verme, okuyucuyu tıklamaya zorla.
+`}`,
         ...(modelName === 'gemini-3-pro-preview' ? { thinkingConfig: { thinkingBudget: 2048 } } : {}),
         responseMimeType: "application/json",
         responseSchema: {
@@ -482,17 +518,20 @@ ${tone === 'SEO Uyumlu Özgün Haber' ? `
     return extractJson(outputText) as HeadlineRefinement;
   };
 
-  try {
-    return await withRetry(() => callApi('gemini-3-flash-preview'));
-  } catch (error: any) {
-    return await withRetry(() => callApi('gemini-3-pro-preview'), 2);
-  }
+  const mainCall = async (forceFree = false) => {
+    try {
+      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree));
+    } catch (error: any) {
+      return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree), 2);
+    }
+  };
+
+  return await mainCall();
 };
 
 export const refineSpot = async (currentSpot: string, newsBody: string, tone: NewsTone): Promise<SpotRefinement> => {
-  const ai = getAiClient();
-  
-  const callApi = async (modelName: string) => {
+  const callApi = async (modelName: string, forceFree = false) => {
+    const ai = getAiClient(forceFree);
     const isOfficial = tone === 'SEO Uyumlu Özgün Haber';
     const response = await ai.models.generateContent({
       model: modelName,
@@ -501,16 +540,15 @@ export const refineSpot = async (currentSpot: string, newsBody: string, tone: Ne
         systemInstruction: `Sen bir haber ajansı kurgu uzmanısın. Mevcut spot metnini (lead) analiz et ve ${tone} moduna uygun 3 farklı alternatif üret. 
 
 Kriterler (${tone} Modu):
-${isOfficial ? `
 1. VURUCU GİRİŞ: Haberi en kapsayıcı ve otoriter şekilde özetle.
-2. 5N1K: Spot, en önemli bilgiyi (Kim, Ne, Nerede, Ne Zaman) içermelidir.
-3. NESNELLİK: Duygusal yorumlardan kaçın, sadece gerçekleşen eylemi yalın bir dille yaz.
-4. TERS PİRAMİT: En can alıcı bilgiyi ilk cümlede ver.
+${isOfficial ? `
+3. 5N1K: Spot, en önemli bilgiyi (Kim, Ne, Nerede, Ne Zaman) içermelidir.
+4. NESNELLİK: Duygusal yorumlardan kaçın, sadece gerçekleşen eylemi yalın bir dille yaz. Kaynakta yoksa yorumlayıcı çıkarım ekleme.
+5. TERS PİRAMİT: En can alıcı bilgiyi ilk cümlede ver.
 ` : `
-1. ULUSAL MEDYA STİLİ: Tıklama odaklı (CTR), merak uyandıran ve SEO anahtar kelimeleriyle zenginleştirilmiş spotlar üret.
-2. ÖRNEK YAPI: "İstanbul iftar saati ve sahur vakti kaçta? gün gün İstanbul İmsakiyesi 2026 ile takip ediliyor. 5 Mart 2026 İstanbul'da günün iftar vakti Diyanet Ramazan imsakiyesi 2026 ile paylaşıldı. İstanbul imsak vakti ve akşam ezanı saati Ramazan ayı ile birlikte araştırılıyor."
-3. GİZEM: Haberin sonucunu veya can alıcı detayını söylemeyen, okuyucuyu içeri çekmeye zorlayan gizemli özet (Teaser).
-4. DİNAMİZM: Discover odaklı, merak uyandırıcı kurgu. "Peki, o detaylar neler?", "İşte yaşananlar..." gibi merak tetikleyicileri kullan.
+3. ULUSAL MEDYA STİLİ: Tıklama odaklı (CTR), merak uyandıran ve SEO anahtar kelimeleriyle zenginleştirilmiş spotlar üret.
+4. GİZEM: Haberin sonucunu veya can alıcı detayını söylemeyen, okuyucuyu içeri çekmeye zorlayan gizemli özet (Teaser).
+5. DİNAMİZM: Discover odaklı, merak uyandırıcı kurgu. "Peki, o detaylar neler?", "İşte yaşananlar..." gibi merak tetikleyicileri kullan.
 `}`,
         ...(modelName === 'gemini-3-pro-preview' ? { thinkingConfig: { thinkingBudget: 2048 } } : {}),
         responseMimeType: "application/json",
@@ -544,17 +582,20 @@ ${isOfficial ? `
     return extractJson(outputText) as SpotRefinement;
   };
 
-  try {
-    return await withRetry(() => callApi('gemini-3-flash-preview'));
-  } catch (error: any) {
-    return await withRetry(() => callApi('gemini-3-pro-preview'), 2);
-  }
+  const mainCall = async (forceFree = false) => {
+    try {
+      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree));
+    } catch (error: any) {
+      return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree), 2);
+    }
+  };
+
+  return await mainCall();
 };
 
 export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promise<string> => {
-  const ai = getAiClient();
-  
-  const callApi = async (modelName: string) => {
+  const callApi = async (modelName: string, forceFree = false) => {
+    const ai = getAiClient(forceFree);
     const response = await ai.models.generateContent({
       model: modelName,
       contents: `Mevcut Haber Metni:\n${newsBody}`,
@@ -566,8 +607,8 @@ export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promi
         2. FORMAT: Ara başlıkların TAMAMI BÜYÜK HARF olmalıdır.
         3. SEO & BAĞLAM: Ara başlıklar SEO uyumlu olmalı ve okuyucuyu bir sonraki paragrafa çekecek yapıda olmalıdır.
         4. TONA ÖZEL KURALLAR:
-           - "SEO Uyumlu Özgün Haber" Mod: Ara başlıklar haber paragraflarıyla doğrudan bağlantılı, bilgilendirici ve ciddi olmalıdır. SORU KALIBI KESİNLİKLE KULLANILMAMALIDIR.
-           - "Ulusal Medya Tipi Tık Odaklı" Mod: Ara başlıklar merak uyandırıcı, dinamik ve "cliffhanger" etkisi yaratan yapıda olmalıdır. SORU ODAKLI OLABİLİR.
+           - "SEO Uyumlu Özgün Haber" Modu: Ara başlıklar haber paragraflarıyla doğrudan bağlantılı, bilgilendirici ve ciddi olmalıdır. Büyük haber portallarındaki gibi SEO odaklı anahtar kelime öbekleri veya doğrudan bilgi veren soru kalıpları kullanılabilir. Haberdeki önemli beyanları tırnak içinde (" ") ara başlıklara taşıyarak vurgula.
+           - "Ulusal Medya Tipi Tık Odaklı" Modu: Ara başlıklar merak uyandırıcı, dinamik ve "cliffhanger" etkisi yaratan yapıda olmalıdır. Soru odaklı, heyecan verici ve anahtar kelime zengini olmalıdır.
         5. ÜSLUP: ${tone === 'SEO Uyumlu Özgün Haber' ? 'Resmi, otoriter ve net.' : 'Dinamik, merak uyandırıcı ve ilgi çekici.'}
         6. ÇIKTI: Sadece güncellenmiş haber metnini (body) döndür.`,
       }
@@ -580,12 +621,20 @@ export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promi
     return outputText;
   };
 
-  try {
-    return await withRetry(() => callApi('gemini-3-flash-preview'));
-  } catch (error: any) {
-    console.error("Refine Subheadings Error:", error);
-    throw error;
-  }
+  const mainCall = async (forceFree = false) => {
+    try {
+      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree));
+    } catch (error: any) {
+      console.error("Refine Subheadings Error:", error);
+      try {
+        return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree), 2);
+      } catch (proError: any) {
+        throw proError;
+      }
+    }
+  };
+
+  return await mainCall();
 };
 
 export const createChatSession = (): Chat => {

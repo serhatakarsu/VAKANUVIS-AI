@@ -1,5 +1,5 @@
 import React from 'react';
-import { PenTool, Archive, Sun, Moon, Zap } from 'lucide-react';
+import { PenTool, Archive, Sun, Moon, Zap, Feather } from 'lucide-react';
 
 interface HeaderProps {
   onOpenHistory: () => void;
@@ -9,62 +9,27 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenHistory, isDarkMode, onToggleTheme }) => {
   return (
-    <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-10 backdrop-blur-md bg-white/90 dark:bg-slate-900/90 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 backdrop-blur-md bg-white/95 dark:bg-slate-900/95 transition-colors">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20">
           <div className="flex items-center group cursor-default">
             {/* Custom Logo: Vakanüvis Geometric Crane */}
-            <div className="mr-3 flex-shrink-0 transition-transform transform group-hover:scale-105 duration-300">
-              <svg className="h-10 w-10 shadow-sm rounded-xl" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <filter id="logo-glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="1" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                </defs>
-                
-                {/* Background Container */}
-                <rect width="40" height="40" rx="10" fill="#F8FAFC" className="dark:fill-slate-800" />
-                
-                {/* Geometric Crane Bird (Hexagonal/Pixel Style) */}
-                {/* Main Body / V-Shape */}
-                <path 
-                  d="M12 15L20 28L28 15" 
-                  stroke="#000000" 
-                  strokeWidth="3" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                />
-                
-                {/* Crane Wings / Hexagonal Elements */}
-                <path 
-                  d="M20 12L28 18L28 26L20 32L12 26L12 18L20 12Z" 
-                  fill="#000080" 
-                  fillOpacity="0.1"
-                  stroke="#000080"
-                  strokeWidth="1"
-                />
-                
-                {/* Pixel Trail (Navy Blue) */}
-                <rect x="30" y="10" width="2" height="2" fill="#000080" />
-                <rect x="33" y="13" width="2" height="2" fill="#000080" opacity="0.6" />
-                <rect x="36" y="16" width="2" height="2" fill="#000080" opacity="0.3" />
-                
-                {/* Head / Beak */}
-                <path 
-                  d="M20 12L23 9L26 12" 
-                  fill="#000000" 
-                />
-              </svg>
+            <div className="mr-4 flex-shrink-0 transition-transform transform group-hover:scale-105 duration-300">
+              <div className="w-12 h-12 bg-slate-900 dark:bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl rotate-3 group-hover:rotate-0 transition-all">
+                <Feather className="w-6 h-6 text-white" />
+              </div>
             </div>
             
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white tracking-tight leading-none">
-                VAKANÜVİS <span className="text-blue-900 dark:text-blue-400">AI</span>
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter leading-none flex items-center">
+                VAKANÜVİS <span className="ml-2 text-blue-600 dark:text-blue-400">AI</span>
               </h1>
-              <p className="text-[10px] text-gray-500 dark:text-slate-400 font-bold mt-1 tracking-tight uppercase">
-                Haberin Dijital Hafızası
-              </p>
+              <div className="flex items-center space-x-2 mt-1">
+                <span className="h-px w-4 bg-slate-300 dark:bg-slate-700"></span>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-black tracking-[0.2em] uppercase">
+                  Haberin Dijital Hafızası
+                </p>
+              </div>
             </div>
           </div>
           
