@@ -177,6 +177,8 @@ function App() {
       if (errorMessage.includes('spending cap')) {
         setErrorMessage("Seçili projenin harcama limiti (spending cap) dolmuş. Lütfen Google Cloud konsolundan limiti artırın veya 'PROJE SEÇ' butonuyla başka bir proje seçin.");
         setIsKeyMissing(true);
+      } else if (errorMessage.includes('search_grounding')) {
+        setErrorMessage("Google Arama (Search Grounding) kotası doldu. Haber üretimine arama desteği olmadan devam ediliyor veya lütfen farklı bir proje seçin.");
       } else if (errorMessage.includes('quota') || errorMessage.includes('429')) {
         setErrorMessage("API kullanım kotası aşıldı. Lütfen bir süre bekleyip tekrar deneyin veya farklı bir proje seçmeyi deneyin.");
       } else if (errorMessage.includes('timeout') || errorMessage.includes('deadline')) {

@@ -89,7 +89,7 @@ const extractJson = (text: string) => {
 };
 
 export const generateNewsContent = async (rawText: string, mode: NewsMode, tone: NewsTone, features: AdvancedFeatures): Promise<GeneratedNews> => {
-  const callApi = async (modelName: string, forceFree = false) => {
+  const callApi = async (modelName: string, forceFree = false, disableSearch = false) => {
     const ai = getAiClient(forceFree);
     
     const properties: any = {
@@ -387,21 +387,26 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
       extraInstructions += "\n- VERİ -> HABER ÜRETİMİ AKTİF: Girdi metnindeki tablo, veri ve istatistikleri öncelikli olarak analiz et ve haberi bu veriler üzerine kur.";
     }
 
+    const config: any = {
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      systemInstruction: buildPrompt(mode, tone, extraInstructions),
+      responseMimeType: "application/json",
+      maxOutputTokens: 8192,
+      responseSchema: {
+        type: Type.OBJECT,
+        properties,
+        required,
+      },
+    };
+
+    if (!disableSearch) {
+      config.tools = [{ googleSearch: {} }];
+    }
+
     const response = await ai.models.generateContent({
       model: modelName,
       contents: `Seçilen Haber Modu: ${mode}\nSeçilen Ton: ${tone}\n\nAKTİF GELİŞMİŞ ÖZELLİKLER:${extraInstructions || "\nYok (Sadece haber metni üret)"}\n\nHam Metin/Notlar:\n${rawText}`,
-      config: {
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-        systemInstruction: buildPrompt(mode, tone, extraInstructions),
-        tools: [{ googleSearch: {} }],
-        responseMimeType: "application/json",
-        maxOutputTokens: 8192,
-        responseSchema: {
-          type: Type.OBJECT,
-          properties,
-          required,
-        },
-      },
+      config,
     });
 
     // Enhanced response checking
@@ -441,18 +446,25 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     return result;
   };
 
-  const mainCall = async (forceFree = false) => {
+  const mainCall = async (forceFree = false, disableSearch = false) => {
     try {
-      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree));
+      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree, disableSearch));
     } catch (error: any) {
       const errorMessage = error?.message || String(error);
+      
+      // Handle Search Grounding Quota specifically
+      if (errorMessage.includes('search_grounding') && !disableSearch) {
+        console.warn("Search grounding quota exceeded. Retrying without search...");
+        return await mainCall(forceFree, true);
+      }
+
       if (errorMessage.includes('spending cap') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
         throw error;
       }
       
       console.warn("Flash model failed, falling back to Pro model...", error);
       try {
-        return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree), 2);
+        return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree, disableSearch), 2);
       } catch (proError: any) {
         console.error("Gemini API Final Error:", proError);
         throw proError;
