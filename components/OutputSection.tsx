@@ -633,6 +633,42 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
                    </div>
                  )}
               </div>
+
+              {/* Keyword Analysis Panel */}
+              {editedNews.keywordAnalysis && editedNews.keywordAnalysis.length > 0 && (
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                   <h4 className="flex items-center text-[10px] font-black uppercase tracking-[0.2em] mb-6 text-slate-400">
+                      <Activity className="w-4 h-4 mr-2 text-rose-500" /> Kelime Yoğunluğu Analizi
+                   </h4>
+                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {editedNews.keywordAnalysis.map((item, i) => (
+                         <div key={i} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col items-center text-center">
+                            <span className="text-sm font-black text-slate-900 mb-1 truncate w-full">{item.word}</span>
+                            <div className="flex items-center space-x-2">
+                               <span className="text-[10px] font-bold text-slate-400">{item.count} Adet</span>
+                               <span className="text-[10px] font-black text-rose-500">%{item.density}</span>
+                            </div>
+                         </div>
+                      ))}
+                   </div>
+                </div>
+              )}
+
+              {/* Expanded Keywords Panel */}
+              {editedNews.expandedKeywords && editedNews.expandedKeywords.length > 0 && (
+                <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+                   <h4 className="flex items-center text-[10px] font-black uppercase tracking-[0.2em] mb-6 text-slate-400">
+                      <Search className="w-4 h-4 mr-2 text-blue-500" /> Ek Arama Sorgusu Önerileri
+                   </h4>
+                   <div className="flex flex-wrap gap-2">
+                      {editedNews.expandedKeywords.map((keyword, i) => (
+                         <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-xl text-[11px] font-bold">
+                            {keyword}
+                         </span>
+                      ))}
+                   </div>
+                </div>
+              )}
             </div>
           </div>
         ) : activeTab === 'comparison' ? (

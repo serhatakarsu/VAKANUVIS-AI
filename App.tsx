@@ -148,11 +148,18 @@ function App() {
     const text = inputText.trim();
     if (!text) return;
 
+    // Reset state for a fresh start
     setAppState(AppState.LOADING);
     setErrorMessage(null);
+    setGeneratedNews(null); // Clear previous news to ensure loading overlay shows
 
     try {
       const news = await generateNewsContent(text, newsConfig.mode, newsConfig.tone, advancedFeatures);
+      
+      if (!news) {
+        throw new Error("Haber içeriği oluşturulamadı. Lütfen tekrar deneyin.");
+      }
+
       setGeneratedNews(news);
       setAppState(AppState.SUCCESS);
       addToast("Haber başarıyla oluşturuldu!", "success");
@@ -168,31 +175,23 @@ function App() {
       setHistoryItems(addItemToHistory(newItem));
 
     } catch (error: any) {
-      setAppState(AppState.ERROR);
       console.error("Generation Error:", error);
+      setAppState(AppState.ERROR);
       
       const errorMessage = error.message || "";
       const errorStatus = error.status || error.code || 0;
       
       if (errorMessage.includes('spending cap')) {
-        setErrorMessage("Seçili projenin harcama limiti (spending cap) dolmuş. Lütfen Google Cloud konsolundan limiti artırın veya 'PROJE SEÇ' butonuyla başka bir proje seçin.");
+        setErrorMessage("Seçili projenin harcama limiti dolmuş. Lütfen başka bir proje seçin.");
         setIsKeyMissing(true);
-      } else if (errorMessage.includes('search_grounding')) {
-        setErrorMessage("Google Arama (Search Grounding) kotası doldu. Haber üretimine arama desteği olmadan devam ediliyor veya lütfen farklı bir proje seçin.");
       } else if (errorMessage.includes('quota') || errorMessage.includes('429')) {
-        setErrorMessage("API kullanım kotası aşıldı. Lütfen bir süre bekleyip tekrar deneyin veya farklı bir proje seçmeyi deneyin.");
+        setErrorMessage("API kullanım kotası aşıldı. Lütfen biraz bekleyip tekrar deneyin.");
       } else if (errorMessage.includes('timeout') || errorMessage.includes('deadline')) {
-        setErrorMessage("İstek zaman aşımına uğradı. İnternet bağlantınızı kontrol edip tekrar deneyin.");
-      } else if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('high demand')) {
-        setErrorMessage("Sistem şu an çok yoğun. Birkaç saniye sonra tekrar denerseniz size yardımcı olabilirim.");
-      } else if (errorStatus === 500 || errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
-        setErrorMessage("API Hatası (500). Lütfen 'Proje Seç' butonuna tıklayarak geçerli bir proje seçtiğinizden emin olun.");
-        setIsKeyMissing(true);
-      } else if (errorMessage.includes('API key not found') || errorMessage.includes('invalid API key')) {
-        setErrorMessage("API anahtarı bulunamadı veya geçersiz. Lütfen proje seçimini kontrol edin.");
-        setIsKeyMissing(true);
+        setErrorMessage("İstek zaman aşımına uğradı. Lütfen tekrar deneyin.");
+      } else if (errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE')) {
+        setErrorMessage("Sistem şu an çok yoğun. Lütfen birkaç saniye sonra tekrar deneyin.");
       } else {
-        setErrorMessage(error.message || "Haber oluşturulurken bir teknik sorun oluştu. Lütfen tekrar deneyin.");
+        setErrorMessage(error.message || "Haber oluşturulurken bir sorun oluştu. Lütfen tekrar deneyin.");
       }
     }
   };
@@ -289,7 +288,7 @@ function App() {
         )}
 
         {/* Loading Overlay */}
-        {appState === AppState.LOADING && !generatedNews && (
+        {appState === AppState.LOADING && (
           <div className="fixed inset-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
              <div className="w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 text-center">
                 <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-6" />

@@ -19,5 +19,5 @@ export const getModePrompt = (mode: NewsMode): string => {
     'Sağlık': 'Tıbbi terimlere dikkat eden, güvenilir ve halk sağlığı odaklı anlatım.'
   };
 
-  return `\nSEÇİLEN HABER MODU: ${mode}\nMOD TALİMATI: ${descriptions[mode]}\nEVRENSEL KURAL: Bu kategorideki haberi yazarken kaynak metindeki cümle yapılarını tamamen terk et. Bilgiyi yeni bir hiyerarşi ve özgün bir anlatım diliyle sun. Benzer cümle kalıplarının tekrarından kaçın. Tüm yazım sürecinde TDK kurallarına ve Haber SEO standartlarına %100 uyum sağla.`;
+  return `\nSEÇİLEN HABER MODU: ${mode}\nMOD TALİMATI: ${descriptions[mode]}\nEVRENSEL ANAYASA KURALI: Bu kategorideki haberi yazarken kaynak metindeki cümle yapılarını TAMAMEN TERK ET. Bilgiyi yeni bir hiyerarşi ve özgün bir anlatım diliyle sun. "Takla attırma" kuralı bu mod için de zorunludur. Tüm yazım sürecinde TDK kurallarına ve Haber SEO standartlarına %100 uyum sağla.`;
 };

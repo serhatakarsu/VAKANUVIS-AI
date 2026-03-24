@@ -1,5 +1,5 @@
 
-export type NewsTone = 'SEO Uyumlu Özgün Haber' | 'Ulusal Medya Tipi Tık Odaklı';
+export type NewsTone = 'SEO Uyumlu Özgün Haber' | 'Ulusal Medya Tipi Tık Odaklı' | 'Daha Resmi ve Ciddi';
 
 export interface GroundingChunk {
   web?: {
@@ -81,6 +81,7 @@ export interface GeneratedNews {
   editorialCalendar?: { title: string; reason: string; keywords: string[]; publishTime: string };
   factCheck?: { unverifiedClaims: string[]; missingData: string[]; potentialErrors: string[]; sourceReliability: string };
   distributionContent?: { xPost: string; facebookPost: string; pushNotification: string; shortVersion: string; linkedinPost: string; instagramCaption: string };
+  keywordAnalysis?: { word: string; count: number; density: string }[];
 }
 
 export interface AdvancedFeatures {
@@ -175,11 +176,12 @@ export const NEWS_MODES: NewsMode[] = [
   'Sağlık'
 ];
 
-export const NEWS_TONES: NewsTone[] = ['SEO Uyumlu Özgün Haber', 'Ulusal Medya Tipi Tık Odaklı'];
+export const NEWS_TONES: NewsTone[] = ['SEO Uyumlu Özgün Haber', 'Ulusal Medya Tipi Tık Odaklı', 'Daha Resmi ve Ciddi'];
 
 export const TONE_DESCRIPTIONS: Record<NewsTone, string> = {
   'SEO Uyumlu Özgün Haber': 'Nesnel, %100 özgün ve SEO odaklı "takla attırılmış" haber.',
-  'Ulusal Medya Tipi Tık Odaklı': 'Yüksek etkileşimli, merak uyandıran ulusal medya tarzı içerik.'
+  'Ulusal Medya Tipi Tık Odaklı': 'Yüksek etkileşimli, merak uyandıran ulusal medya tarzı içerik.',
+  'Daha Resmi ve Ciddi': 'Kurumsal duyurular, resmi açıklamalar ve ağırbaşlı haber dili.'
 };
 
 export type NewsStatus = 'active' | 'archived' | 'trashed';

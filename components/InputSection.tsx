@@ -166,7 +166,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
         </div>
 
         <div className="flex flex-col space-y-3">
-          <div className="flex items-start space-x-3 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+          <div className="flex items-start space-x-3 text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md">
             <Info className="w-4 h-4 mt-0.5 text-blue-500 flex-shrink-0" />
             <p className="leading-relaxed opacity-90">
               <span className="font-bold text-slate-900 dark:text-white">{selectedMode}:</span> {MODE_DESCRIPTIONS[selectedMode]}
@@ -312,11 +312,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </div>
       
       {/* Text Area */}
-      <div className="flex-1 p-8 relative group bg-white dark:bg-slate-900 flex flex-col border-t border-slate-200 dark:border-slate-800 min-h-[350px]">
+      <div className="flex-1 p-8 relative group bg-white dark:bg-slate-900 flex flex-col border-t border-slate-200 dark:border-slate-800 min-h-[400px]">
         <div className="absolute top-6 right-6 z-10 flex space-x-2">
            <button
              onClick={toggleListening}
-             className={`p-3 rounded-2xl transition-all shadow-xl border ${isListening ? 'bg-rose-500 text-white border-rose-600 animate-pulse' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-blue-600 border-slate-200 dark:border-slate-700'}`}
+             className={`p-3 rounded-2xl transition-all shadow-xl border ${isListening ? 'bg-rose-500 text-white border-rose-600 animate-pulse' : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-blue-600 border-slate-200 dark:border-slate-700 hover:scale-110 active:scale-95'}`}
              title={isListening ? 'Dinlemeyi Durdur' : 'Sesli Giriş'}
            >
              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}

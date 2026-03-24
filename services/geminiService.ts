@@ -14,8 +14,8 @@ const getAiClient = (forceFree = false) => {
 /**
  * Helper to perform exponential backoff retries for 503/UNAVAILABLE errors.
  */
-const withRetry = async <T>(fn: (forceFree?: boolean) => Promise<T>, maxRetries = 3): Promise<T> => {
-  let delay = 1000;
+const withRetry = async <T>(fn: (forceFree?: boolean) => Promise<T>, maxRetries = 2): Promise<T> => {
+  let delay = 500;
   let forceFree = false;
 
   for (let i = 0; i < maxRetries; i++) {
@@ -26,8 +26,12 @@ const withRetry = async <T>(fn: (forceFree?: boolean) => Promise<T>, maxRetries 
       const isRetryable = 
         errorMessage.includes('503') || 
         errorMessage.includes('UNAVAILABLE') || 
+        errorMessage.includes('500') ||
+        errorMessage.includes('Internal Server Error') ||
         error?.status === 503 || 
-        error?.code === 503;
+        error?.code === 503 ||
+        error?.status === 500 ||
+        error?.code === 500;
 
       const isSpendingCap = errorMessage.includes('spending cap') || errorMessage.includes('RESOURCE_EXHAUSTED');
 
@@ -39,9 +43,9 @@ const withRetry = async <T>(fn: (forceFree?: boolean) => Promise<T>, maxRetries 
       }
 
       if (isRetryable && i < maxRetries - 1) {
-        console.warn(`Gemini API 503 detected. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+        console.warn(`Gemini API error detected. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2; // Exponential backoff
+        delay *= 1.5; // Faster exponential backoff
         continue;
       }
       throw error;
@@ -96,8 +100,25 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
       headline: { type: Type.STRING },
       spot: { type: Type.STRING },
       body: { type: Type.STRING },
+      metaTitle: { type: Type.STRING, description: "Haber için optimize edilmiş 60 karakteri geçmeyen Meta Title." },
+      metaDescription: { type: Type.STRING, description: "Haber için optimize edilmiş 160 karakteri geçmeyen Meta Description." },
+      slug: { type: Type.STRING, description: "Haber için SEO uyumlu URL slug (örn: haber-basligi-burada)." },
+      expandedKeywords: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Haberin daha fazla sorguda çıkması için önerilen ek anahtar kelimeler." },
+      keywordAnalysis: { 
+        type: Type.ARRAY, 
+        items: { 
+          type: Type.OBJECT, 
+          properties: {
+            word: { type: Type.STRING },
+            count: { type: Type.NUMBER },
+            density: { type: Type.STRING }
+          },
+          required: ["word", "count", "density"]
+        },
+        description: "Metindeki anahtar kelime yoğunluğu analizi."
+      }
     };
-    const required = ["headline", "spot", "body"];
+    const required = ["headline", "spot", "body", "metaTitle", "metaDescription", "slug", "expandedKeywords", "keywordAnalysis"];
 
     let extraInstructions = "";
 
@@ -368,8 +389,8 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     };
     required.push("qualityAudit");
 
+    // Only include extra analytical fields if specifically requested or in a high-analysis mode
     if (features.performancePrediction || features.discoverOptimization || features.aiEditorAudit) {
-      // Add extra analytical fields only if requested to save tokens/time
       Object.assign(properties.qualityAudit.properties, {
         trendAnalysis: { type: Type.STRING },
         critique: { type: Type.STRING },
@@ -415,14 +436,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     if (!outputText) {
       const candidate = response.candidates?.[0];
       const finishReason = candidate?.finishReason;
-      const safetyRatings = candidate?.safetyRatings;
       
-      console.error("Gemini Empty Response Debug:", {
-        finishReason,
-        safetyRatings,
-        response: JSON.stringify(response).slice(0, 500)
-      });
-
       if (finishReason === 'SAFETY') {
         throw new Error("İçerik güvenlik filtrelerine takıldı. Lütfen metni gözden geçirip tekrar deneyin.");
       }
@@ -431,14 +445,28 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
         throw new Error("İçerik telif hakkı korumalı bir metne çok benziyor. Lütfen farklı bir şekilde ifade edin.");
       }
 
-      if (finishReason === 'OTHER' || !finishReason) {
-        throw new Error("API kotası aşılmış olabilir veya istek zaman aşımına uğradı. Lütfen bir süre sonra tekrar deneyin.");
-      }
-
       throw new Error(`Model yanıt üretemedi (Sebep: ${finishReason || 'Bilinmiyor'}). Lütfen kısa bir süre sonra tekrar deneyin.`);
     }
     
     const result = extractJson(outputText) as GeneratedNews;
+    
+    // Post-process to remove Markdown as requested by user
+    const stripMarkdown = (text: string) => {
+      if (!text) return text;
+      return text
+        .replace(/\*\*/g, '') // Bold
+        .replace(/\*/g, '')   // Italic
+        .replace(/__/g, '')   // Underline/Bold
+        .replace(/_/g, '')    // Italic
+        .replace(/~~/g, '')   // Strikethrough
+        .replace(/#/g, '')    // Headers
+        .replace(/`/g, '');   // Code
+    };
+
+    if (result.headline) result.headline = stripMarkdown(result.headline);
+    if (result.spot) result.spot = stripMarkdown(result.spot);
+    if (result.body) result.body = stripMarkdown(result.body);
+    
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
     if (groundingChunks) {
       result.groundingChunks = groundingChunks;
@@ -448,13 +476,13 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
 
   const mainCall = async (forceFree = false, disableSearch = false) => {
     try {
-      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree, disableSearch));
+      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree, disableSearch), 2);
     } catch (error: any) {
       const errorMessage = error?.message || String(error);
       
-      // Handle Search Grounding Quota specifically
-      if (errorMessage.includes('search_grounding') && !disableSearch) {
-        console.warn("Search grounding quota exceeded. Retrying without search...");
+      // Handle Search Grounding Quota or 500 errors that might be tool-related
+      if ((errorMessage.includes('search_grounding') || errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) && !disableSearch) {
+        console.warn("Search grounding quota exceeded or 500 error detected. Retrying without search...");
         return await mainCall(forceFree, true);
       }
 
@@ -463,8 +491,9 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
       }
       
       console.warn("Flash model failed, falling back to Pro model...", error);
+      await new Promise(resolve => setTimeout(resolve, 500)); // Shorter delay before fallback
       try {
-        return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree, disableSearch), 2);
+        return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree, disableSearch), 1); // Only 1 retry for Pro fallback
       } catch (proError: any) {
         console.error("Gemini API Final Error:", proError);
         throw proError;
@@ -491,7 +520,12 @@ Kurallar (${tone} Modu):
 3. ANAHTAR KELİME: Anahtar kelimeyi mutlaka başlığın başına yerleştir.
 ${tone === 'SEO Uyumlu Özgün Haber' ? `
 5. NESNELLİK: Duygusal sıfatlardan, yorumlardan ve "süslü" kelimelerden tamamen kaçın. Kaynak metinde olmayan yorumlayıcı çıkarımları (örn: "...olarak değerlendiriliyor") ekleme.
-6. GAZETE/PORTAL STİLİ: Büyük haber portalları ve gazetelerin (Hürriyet, Yenişafak, Medyascope, Dünya vb.) standartlarında; profesyonel, ilgi çekici ve bilgilendirici başlıklar üret. Haberdeki en vurucu beyanı veya tırnak içindeki ifadeyi tırnak içinde (" ") başlığa taşıyarak vurgula. Ajans dilinden (AA, İHA vb.) kaçın.
+6. GAZETE/PORTAL STİLİ: Başlıklar kesinlikle abartıdan uzak, doğrudan haberi veren, ciddi, nesnel ve bilgilendirici olmalıdır. "Son dakika", "kritik açıklama", "şok gelişme" gibi tıklama tuzaklarından (clickbait) KESİNLİKLE uzak dur. Sadece cümlenin ilk harfi ve özel isimler büyük yazılmalıdır. Haberin özünü en net ve yalın haliyle yansıt.
+  - Örnek 1: "Atatürk’ün Mersin’e gelişinin 103’üncü yıl dönümü törenle kutlandı"
+  - Örnek 2: "Yüreğir Belediyesi'nden ibadethanelerde bayram temizliği"
+  - Örnek 3: "Prof. Dr. Çelik: 'Onkofertilite kanser tedavisi alan hastaya gelecekteki ebeveynlik şansını koruma imkanı sunar'"
+  - Örnek 4: "Trendyol Süper Lig'de 27. haftanın hakemleri belli oldu"
+  - Örnek 5: "İran'dan ABD'nin 'Destansı Öfke' söylemine İngilizce yanıt: 'Bu savaş destansı öfke değil destansı korku'"
 7. DİL: Nesnel ama akıcı ve editoryal yapı.
 ` : `
 5. ULUSAL MEDYA STİLİ: Tıklama odaklı (Clickbait), merak uyandıran ve SEO anahtar kelimeleriyle zenginleştirilmiş başlıklar üret.
@@ -527,7 +561,14 @@ ${tone === 'SEO Uyumlu Özgün Haber' ? `
       const finishReason = response.candidates?.[0]?.finishReason;
       throw new Error(`Model başlık üretemedi (Sebep: ${finishReason || 'Bilinmiyor'}).`);
     }
-    return extractJson(outputText) as HeadlineRefinement;
+    const result = extractJson(outputText) as HeadlineRefinement;
+    if (result.alternatives) {
+      result.alternatives = result.alternatives.map(alt => ({
+        ...alt,
+        text: alt.text.replace(/\*\*/g, '')
+      }));
+    }
+    return result;
   };
 
   const mainCall = async (forceFree = false) => {
@@ -591,7 +632,14 @@ ${isOfficial ? `
       const finishReason = response.candidates?.[0]?.finishReason;
       throw new Error(`Model spot üretemedi (Sebep: ${finishReason || 'Bilinmiyor'}).`);
     }
-    return extractJson(outputText) as SpotRefinement;
+    const result = extractJson(outputText) as SpotRefinement;
+    if (result.alternatives) {
+      result.alternatives = result.alternatives.map(alt => ({
+        ...alt,
+        text: alt.text.replace(/\*\*/g, '')
+      }));
+    }
+    return result;
   };
 
   const mainCall = async (forceFree = false) => {
@@ -620,8 +668,9 @@ export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promi
         3. SEO & BAĞLAM: Ara başlıklar SEO uyumlu olmalı ve okuyucuyu bir sonraki paragrafa çekecek yapıda olmalıdır.
         4. TONA ÖZEL KURALLAR:
            - "SEO Uyumlu Özgün Haber" Modu: Ara başlıklar haber paragraflarıyla doğrudan bağlantılı, bilgilendirici ve ciddi olmalıdır. Büyük haber portallarındaki gibi SEO odaklı anahtar kelime öbekleri veya doğrudan bilgi veren soru kalıpları kullanılabilir. Haberdeki önemli beyanları tırnak içinde (" ") ara başlıklara taşıyarak vurgula.
-           - "Ulusal Medya Tipi Tık Odaklı" Modu: Ara başlıklar merak uyandırıcı, dinamik ve "cliffhanger" etkisi yaratan yapıda olmalıdır. Soru odaklı, heyecan verici ve anahtar kelime zengini olmalıdır.
-        5. ÜSLUP: ${tone === 'SEO Uyumlu Özgün Haber' ? 'Resmi, otoriter ve net.' : 'Dinamik, merak uyandırıcı ve ilgi çekici.'}
+           - "Ulusal Medya Tipi Tık Odaklı" Modu: Ara başlıklar merak uyandırıcı, dinamik ve "cliffhanger" etkisi yaratan yapıda olmalıdır. Soru odaklı, heyecan verici ve anahtar kelime zengini olmalıdır. Okuyucunun arama motorunda sorduğu soruları ara başlığa taşı.
+           - "Daha Resmi ve Ciddi" Modu: Konuyla doğrudan alakalı, bölümün içeriğini özetleyen ve anahtar kelime içeren profesyonel başlıklar. "DETAYLAR" gibi genel ifadeler yerine "STRATEJİK ADIMLAR", "YENİ DÜZENLEMENİN KAPSAMI", "RESMİ MAKAMLARIN DEĞERLENDİRMESİ" gibi içerik odaklı başlıklar seç.
+        5. ÜSLUP: ${tone === 'SEO Uyumlu Özgün Haber' ? 'Resmi, otoriter ve net.' : tone === 'Daha Resmi ve Ciddi' ? 'Kurumsal, ciddi ve profesyonel.' : 'Dinamik, merak uyandırıcı ve ilgi çekici.'}
         6. ÇIKTI: Sadece güncellenmiş haber metnini (body) döndür.`,
       }
     });
@@ -630,7 +679,7 @@ export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promi
       const finishReason = response.candidates?.[0]?.finishReason;
       throw new Error(`Model ara başlık üretemedi (Sebep: ${finishReason || 'Bilinmiyor'}).`);
     }
-    return outputText;
+    return outputText.replace(/\*\*/g, '');
   };
 
   const mainCall = async (forceFree = false) => {
