@@ -19,7 +19,8 @@ TON: NESNEL, CİDDİ, SEO ODAKLI, YORUMSUZ.
 - SPOT: Haberin en can alıcı 5N1K bilgisini içeren, anahtar kelime zengini ve okuyucuyu habere hazırlayan profesyonel özet.
 - NESNELLİK (KRİTİK): Kaynak metinde açıkça belirtilmediği sürece asla yorum, analiz veya "değerlendiriliyor", "görülüyor", "bekleniyor" gibi yoruma açık ifadeler ekleme. "Bir kez daha gözler önüne serdi", "dikkatleri üzerine çekti", "büyük yankı uyandırdı" gibi klişe ve yoruma dayalı dolgu cümlelerini KESİNLİKLE kullanma.
 - SONUÇ BÖLÜMÜ: Haberin sonuna kaynak metinde bulunmayan özetleyici yorumlar, "geleceğe dair beklentiler" veya "temenniler" ekleme. Haber, kaynak metindeki son bilgiyle net bir şekilde bitmelidir.
-- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Bilgilendirici, nesnel ve anahtar kelime odaklı. Bölümün içeriğini net bir şekilde yansıtan ifadeler seç. Önemli beyanları tırnak içinde (" ") ara başlıklara taşıyarak vurgula. "GELİŞMELER" veya "DETAYLAR" gibi genel başlıklar yerine "YENİ DÜZENLEMENİN KAPSAMI", "BAKANLIKTAN YAPILAN RESMİ AÇIKLAMA" gibi spesifik başlıklar kullan.
+- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Büyük haber sitelerindeki gibi "mini-manşet" niteliğinde, bilgilendirici, nesnel ve anahtar kelime odaklı. Bölümün içeriğini net bir şekilde yansıtan ifadeler seç. Önemli beyanları tırnak içinde (" ") ara başlıklara taşıyarak vurgula. "GELİŞMELER" veya "DETAYLAR" gibi genel başlıklar yerine "YENİ DÜZENLEMENİN KAPSAMI", "BAKANLIKTAN YAPILAN RESMİ AÇIKLAMA" gibi spesifik başlıklar kullan.
+- ALINTI KULLANIMI: Tırnak içindeki beyanları haberin akışına profesyonelce yedir. "Diyen...", "Vurgulayan...", "Şu ifadeleri kullandı:" gibi geçişlerle metni zenginleştir.
 - CÜMLE YAPISI: Metin genelinde cümle yapılarını çeşitlendir; sadece "özne + yüklem" şeklinde değil, devrik veya bağlaçlı cümlelerle akıcılığı sağla.
 `,
     'Ulusal Medya Tipi Tık Odaklı': `
@@ -36,7 +37,8 @@ TON: YÜKSEK ETKİLEŞİMLİ, MERAK UYANDIRAN, SEO VE SORU ODAKLI.
     - Rakam Odaklı: "Tam X TL oldu! Yeni liste yayınlandı: İşte kalem kalem fiyatlar"
     - Lokasyon Odaklı: "Adana'da yaşayanlar dikkat! Valilikten son dakika uyarısı geldi"
 - SPOT: Merak uyandırıcı, bilgiyi kısmen veren ama detay için içeri çeken kurgu. Mutlaka bir soru ile bitirilebilir veya "İşte o detaylar..." gibi bir köprü kurulabilir.
-- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Tıklama oranını (CTR) artıracak, merak uyandıran, genellikle soru kalıbında (Örn: "X SAAT KAÇTA?", "X BELLİ OLDU MU?") veya heyecan verici anahtar kelime öbekleri. Okuyucunun arama motorunda sorduğu soruları ara başlığa taşı.
+- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Tıklama oranını (CTR) artıracak, merak uyandıran, genellikle soru kalıbında (Örn: "X SAAT KAÇTA?", "X BELLİ OLDU MU?") veya heyecan verici anahtar kelime öbekleri. Büyük haber sitelerindeki gibi "mini-manşet" tarzında kurgula. Okuyucunun arama motorunda sorduğu soruları ara başlığa taşı.
+- ALINTI KULLANIMI: Önemli cümleleri tırnak içinde kullanarak habere derinlik ve güvenilirlik kat.
 - HABER METNİ (BODY):
   - SEO SORULARI: Metin içerisinde okuyucunun arama motorlarında sorduğu soruları (Örn: "Peki, LGS'ye kaç gün kaldı, başvuru tarihleri belli oldu mu?") doğal bir akışla kullan.
   - ANAHTAR KELİME TEKRARI: Anahtar kelimeleri (şehir ismi, sınav adı, yıl vb.) metin boyunca farklı varyasyonlarla sıkça geçir.

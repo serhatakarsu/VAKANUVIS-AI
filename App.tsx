@@ -251,17 +251,17 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-300">
       <Header onOpenHistory={() => setIsHistoryOpen(true)} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} />
       
       {isKeyMissing && (
-        <div className="bg-blue-600 text-white px-4 py-2.5 flex items-center justify-center space-x-6 z-30 shadow-lg animate-in slide-in-from-top-full">
+        <div className="bg-blue-600 text-white px-4 py-2 flex items-center justify-center space-x-6 z-30 animate-in slide-in-from-top-full">
           <div className="flex items-center space-x-2">
-            <KeyRound className="w-4 h-4" />
-            <span className="text-sm font-bold">Gelişmiş AI özelliklerini kullanmak için faturalandırması açık bir proje seçin.</span>
+            <KeyRound className="w-3.5 h-3.5" />
+            <span className="text-xs font-medium">Gelişmiş AI özelliklerini kullanmak için faturalandırması açık bir proje seçin.</span>
           </div>
           <div className="flex items-center space-x-3">
-            <button onClick={handleKeySelect} className="bg-white text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase hover:bg-blue-50 transition-colors">PROJE SEÇ</button>
+            <button onClick={handleKeySelect} className="bg-white text-blue-600 px-3 py-1 rounded-md text-[10px] font-bold uppercase hover:bg-blue-50 transition-colors">PROJE SEÇ</button>
             <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[9px] underline flex items-center opacity-80 hover:opacity-100">Faturalandırma <ExternalLink className="w-2 h-2 ml-1" /></a>
           </div>
         </div>
@@ -289,19 +289,19 @@ function App() {
 
         {/* Loading Overlay */}
         {appState === AppState.LOADING && (
-          <div className="fixed inset-0 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-             <div className="w-full max-w-md p-8 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 text-center">
-                <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-6" />
-                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Vakanüvis Yazıyor</h3>
-                <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">Haberin dijital hafızası kurgulanıyor.</p>
+          <div className="fixed inset-0 bg-white/60 dark:bg-slate-950/60 backdrop-blur-md z-50 flex flex-col items-center justify-center">
+             <div className="w-full max-w-sm p-8 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-center">
+                <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-6" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Vakanüvis Yazıyor</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-xs mb-8">Haberin dijital hafızası kurgulanıyor.</p>
                 
-                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mb-4 overflow-hidden">
+                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 mb-4 overflow-hidden">
                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out" 
+                      className="bg-blue-600 h-1 rounded-full transition-all duration-500 ease-out" 
                       style={{ width: `${((loadingStep + 1) / LOADING_STEPS.length) * 100}%` }}
                    />
                 </div>
-                <p className="text-xs font-bold text-blue-600 uppercase tracking-widest animate-pulse">
+                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
                    {LOADING_STEPS[loadingStep]}
                 </p>
              </div>
@@ -330,37 +330,32 @@ function App() {
         </div>
       </main>
       
-      <footer className="bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 py-12 transition-colors">
+      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
               <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-blue-600 flex items-center justify-center shadow-lg">
-                  <Feather className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-blue-600 flex items-center justify-center">
+                  <Feather className="w-4 h-4 text-white" />
                 </div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-widest uppercase">Vakanüvis AI</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-widest uppercase">Vakanüvis AI</h2>
               </div>
-              <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-medium italic">
-                "Vakanüvis, bin yıllık yazım geleneğini yapay zekanın hızıyla birleştiren profesyonel bir dijital editördür. Ajanslardan gelen ham haberleri saniyeler içinde SEO uyumlu, tamamen özgün ve çarpıcı başlıklarla donatılmış dijital içeriklere dönüştürür."
+              <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed font-medium italic">
+                "Vakanüvis, bin yıllık yazım geleneğini yapay zekanın hızıyla birleştiren profesyonel bir dijital editördür."
               </p>
             </div>
-            <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-slate-800">
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Editörlerinizin iş yükünü %80 azaltırken, haber sitenizin Google sıralamalarını ve tıklanma oranlarını yukarı taşır. Adana’nın cesur girişimci ruhuyla geliştirdiğimiz bu teknolojiyle, haber odanızı bir veri fabrikasından bir içerik atölyesine dönüştürüyoruz. Vakanüvis ile sadece haber yazmayın; tarihe iz bırakın.
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-800">
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                Editörlerinizin iş yükünü %80 azaltırken, haber sitenizin Google sıralamalarını ve tıklanma oranlarını yukarı taşır.
               </p>
-              <div className="mt-4 flex items-center space-x-2">
-                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Geleceğin Kalemi</span>
-              </div>
             </div>
           </div>
-          <div className="mt-12 pt-8 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Vakanüvis AI - Tüm Hakları Saklıdır</p>
+          <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Vakanüvis AI</p>
             <div className="flex space-x-6">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-default hover:text-blue-600 transition-colors">Hızlı</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-default hover:text-blue-600 transition-colors">SEO Odaklı</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-default hover:text-blue-600 transition-colors">SEO</span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-default hover:text-blue-600 transition-colors">Otoriter</span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-default hover:text-blue-600 transition-colors">Bilge</span>
             </div>
           </div>
         </div>
@@ -369,20 +364,20 @@ function App() {
       <ChatBot />
 
       {/* Toast Notifications */}
-      <div className="fixed top-20 right-6 z-[100] space-y-3 pointer-events-none">
+      <div className="fixed top-20 right-6 z-[100] space-y-2 pointer-events-none">
         {toasts.map(toast => (
           <div 
             key={toast.id}
-            className={`pointer-events-auto flex items-center space-x-3 px-4 py-3 rounded-xl shadow-2xl border animate-in slide-in-from-right-5 duration-300 ${
+            className={`pointer-events-auto flex items-center space-x-3 px-4 py-2 rounded-lg shadow-lg border animate-in slide-in-from-right-5 duration-300 ${
               toast.type === 'success' ? 'bg-emerald-600 border-emerald-500 text-white' :
               toast.type === 'error' ? 'bg-rose-600 border-rose-500 text-white' :
               'bg-slate-900 border-slate-800 text-white'
             }`}
           >
-            {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : 
-             toast.type === 'error' ? <AlertCircle className="w-4 h-4" /> : 
-             <Info className="w-4 h-4" />}
-            <span className="text-xs font-bold">{toast.message}</span>
+            {toast.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5" /> : 
+             toast.type === 'error' ? <AlertCircle className="w-3.5 h-3.5" /> : 
+             <Info className="w-3.5 h-3.5" />}
+            <span className="text-[11px] font-medium">{toast.message}</span>
             <button onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} className="ml-2 hover:opacity-70 transition-opacity">
               <X className="w-3 h-3" />
             </button>
@@ -392,66 +387,32 @@ function App() {
 
       {/* Welcome Modal */}
       {showWelcome && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-800 animate-in zoom-in-95 duration-500">
-            <div className="relative h-48 bg-slate-900 dark:bg-slate-950 flex items-center justify-center overflow-hidden">
-               <div className="absolute inset-0 opacity-20">
-                  <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,#3b82f6,transparent_70%)]" />
-               </div>
-               <div className="relative z-10 text-center">
-                  <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-2xl rotate-3">
-                     <Feather className="w-10 h-10 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-black text-white uppercase tracking-[0.3em]">Vakanüvis AI</h2>
-               </div>
-            </div>
-            
-            <div className="p-10">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                  <div className="flex items-start space-x-4">
-                     <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-                        <Zap className="w-5 h-5 text-blue-600" />
-                     </div>
-                     <div>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase mb-1">Hızlı Üretim</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Saniyeler içinde ajans notlarından profesyonel haberler üretin.</p>
-                     </div>
-                  </div>
-                  <div className="flex items-start space-x-4">
-                     <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
-                        <Search className="w-5 h-5 text-emerald-600" />
-                     </div>
-                     <div>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase mb-1">SEO & Discover</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Google Discover ve SEO uyumlu başlıklarla trafiğinizi artırın.</p>
-                     </div>
-                  </div>
-                  <div className="flex items-start space-x-4">
-                     <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                        <TrendingUp className="w-5 h-5 text-amber-600" />
-                     </div>
-                     <div>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase mb-1">Trend Analizi</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Gündemi takip edin ve trend potansiyeli yüksek içerikler oluşturun.</p>
-                     </div>
-                  </div>
-                  <div className="flex items-start space-x-4">
-                     <div className="w-10 h-10 rounded-full bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center flex-shrink-0">
-                        <ShieldCheck className="w-5 h-5 text-rose-600" />
-                     </div>
-                     <div>
-                        <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase mb-1">Fact Check</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Hataları ayıklayın ve bilginin doğruluğunu denetleyin.</p>
-                     </div>
-                  </div>
-               </div>
-               
-               <button 
-                 onClick={closeWelcome}
-                 className="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-xl"
-               >
-                 Hemen Başlayın
-               </button>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-500">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                <Feather className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-widest mb-2">Vakanüvis AI</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">Haberin dijital hafızasına hoş geldiniz.</p>
+              
+              <div className="grid grid-cols-1 gap-4 mb-8 text-left">
+                <div className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <Zap className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Hızlı ve özgün haber üretimi</span>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <Search className="w-4 h-4 text-emerald-600" />
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200">SEO ve Discover optimizasyonu</span>
+                </div>
+              </div>
+              
+              <button 
+                onClick={closeWelcome}
+                className="w-full py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-blue-700 transition-all"
+              >
+                Başla
+              </button>
             </div>
           </div>
         </div>
