@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, Type, Chat, ThinkingLevel } from "@google/genai";
 import { GeneratedNews, NewsMode, HeadlineRefinement, SpotRefinement, NewsTone, AdvancedFeatures } from "../types";
-import { buildPrompt } from "../src/prompts/promptBuilder";
+import { buildPrompt } from "../prompts/promptBuilder";
 
 // Initialize the Gemini client inside functions to pick up latest API key
 const getAiClient = (forceFree = false) => {
@@ -97,13 +97,22 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     const ai = getAiClient(forceFree);
     
     const properties: any = {
-      headline: { type: Type.STRING },
-      spot: { type: Type.STRING },
-      body: { type: Type.STRING },
-      metaTitle: { type: Type.STRING, description: "Haber için optimize edilmiş 60 karakteri geçmeyen Meta Title." },
-      metaDescription: { type: Type.STRING, description: "Haber için optimize edilmiş 160 karakteri geçmeyen Meta Description." },
-      slug: { type: Type.STRING, description: "Haber için SEO uyumlu URL slug (örn: haber-basligi-burada)." },
-      expandedKeywords: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Haberin daha fazla sorguda çıkması için önerilen ek anahtar kelimeler." },
+      headline: { 
+        type: Type.STRING, 
+        description: "Haber Başlığı. KRİTİK: Sadece ilk harf ve özel isimler büyük yazılmalı (Sentence case). Kategori ve tonla %100 uyumlu, SEO odaklı, çarpıcı." 
+      },
+      spot: { 
+        type: Type.STRING, 
+        description: "Haber Spotu (Lead). 1-2 cümlelik, haberi özetleyen, anahtar kelime zengini ve başlığı destekleyen vurucu metin." 
+      },
+      body: { 
+        type: Type.STRING,
+        description: "Haber Metni. KRİTİK: En az 2-4 adet ARA BAŞLIK içermeli. Ara başlıklar TAMAMI BÜYÜK HARF ve TEK CÜMLE olmalı. Sadece doğrudan alıntı varsa tırnak içinde (\" \") yazılmalı, aksi halde tırnak kullanılmamalı."
+      },
+      metaTitle: { type: Type.STRING, description: "SEO Meta Title (max 60 kar)." },
+      metaDescription: { type: Type.STRING, description: "SEO Meta Desc (max 160 kar)." },
+      slug: { type: Type.STRING, description: "SEO URL slug." },
+      expandedKeywords: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Ek anahtar kelimeler." },
       keywordAnalysis: { 
         type: Type.ARRAY, 
         items: { 
@@ -115,7 +124,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
           },
           required: ["word", "count", "density"]
         },
-        description: "Metindeki anahtar kelime yoğunluğu analizi."
+        description: "Kelime yoğunluğu analizi."
       }
     };
     const required = ["headline", "spot", "body", "metaTitle", "metaDescription", "slug", "expandedKeywords", "keywordAnalysis"];
@@ -237,7 +246,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
         properties: {
           altIntro: { type: Type.STRING },
           altParagraph: { type: Type.STRING },
-          altHeadline: { type: Type.STRING },
+          altHeadline: { type: Type.STRING, description: "Alternatif haber başlığı. Özel isimlerin yazılışına dikkat edilmelidir." },
           bulletPoints: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
         required: ["altIntro", "altParagraph", "altHeadline", "bulletPoints"]
@@ -273,7 +282,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
       properties.seoClickPanel = {
         type: Type.OBJECT,
         properties: {
-          clickHeadline: { type: Type.STRING },
+          clickHeadline: { type: Type.STRING, description: "Tıklanma odaklı alternatif başlık. Özel isimlerin yazılışına dikkat edilmelidir." },
           clickSpot: { type: Type.STRING },
           seoSubheadingSuggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
@@ -282,7 +291,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
       properties.discoverOptimization = {
         type: Type.OBJECT,
         properties: {
-          title: { type: Type.STRING },
+          title: { type: Type.STRING, description: "Discover için optimize edilmiş başlık. Özel isimlerin yazılışına dikkat edilmelidir." },
           spot: { type: Type.STRING },
           analysis: { type: Type.STRING },
           highResImageIdea: { type: Type.STRING }
@@ -379,7 +388,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
         googleNewsSuitability: { type: Type.STRING },
         trendPotential: { type: Type.STRING },
         suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-        alternativeHeadlines: { type: Type.ARRAY, items: { type: Type.STRING } },
+        alternativeHeadlines: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Alternatif başlıklar. Özel isimlerin yazılışına dikkat edilmelidir." },
       },
       required: [
         "seoScore", "seoExplanation", "originalityScore", "originalityExplanation",
@@ -409,7 +418,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     }
 
     const config: any = {
-      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       systemInstruction: buildPrompt(mode, tone, extraInstructions),
       responseMimeType: "application/json",
       maxOutputTokens: 8192,
@@ -518,6 +527,7 @@ Kurallar (${tone} Modu):
 1. BAŞLIK MÜHENDİSLİĞİ: Başlık net, bilgilendirici ama sıkıcı değil; kapsayıcı ve otoriter olmalı.
 2. FORMAT (KRİTİK): Başlıklarda yalnızca özel isimler ve cümlenin ilk kelimesi büyük harfle başlamalıdır. Diğer tüm kelimeler küçük harfle yazılmalıdır. (Sentence case + özel isimler).
 3. ANAHTAR KELİME: Anahtar kelimeyi mutlaka başlığın başına yerleştir.
+4. YORUM VE KELİME SEÇİMİ: Cümlelere aşırı yorumsal veya sıkıntılı kelimeler ekleme. Yapılan yorumlar/çıkarımlar kesinlikle haber formatında olmalıdır.
 ${tone === 'SEO Uyumlu Özgün Haber' ? `
 5. NESNELLİK: Duygusal sıfatlardan, yorumlardan ve "süslü" kelimelerden tamamen kaçın. Kaynak metinde olmayan yorumlayıcı çıkarımları (örn: "...olarak değerlendiriliyor") ekleme.
 6. GAZETE/PORTAL STİLİ: Başlıklar kesinlikle abartıdan uzak, doğrudan haberi veren, ciddi, nesnel ve bilgilendirici olmalıdır. "Son dakika", "kritik açıklama", "şok gelişme" gibi tıklama tuzaklarından (clickbait) KESİNLİKLE uzak dur. Sadece cümlenin ilk harfi ve özel isimler büyük yazılmalıdır. Haberin özünü en net ve yalın haliyle yansıt.
@@ -592,14 +602,17 @@ export const refineSpot = async (currentSpot: string, newsBody: string, tone: Ne
       config: {
         systemInstruction: `Sen bir haber ajansı kurgu uzmanısın. Mevcut spot metnini (lead) analiz et ve ${tone} moduna uygun 3 farklı alternatif üret. 
 
+Haberin spot kısmı (özet/lead); başlıkla metin arasında yer alan, habere dair en çarpıcı, önemli veya ilginç bilgiyi sunan özet cümlesidir. Okuyucunun ilgisini çekerek metnin devamını okumaya ikna etmeyi amaçlayan spotlar; kısa, net, tarafsız, merak uyandırıcı ve temel 5N1K unsurlarını içermelidir.
+
 Kriterler (${tone} Modu):
 1. VURUCU GİRİŞ: Haberi en kapsayıcı ve otoriter şekilde özetle.
+2. YORUM VE KELİME SEÇİMİ: Cümlelere aşırı yorumsal veya sıkıntılı kelimeler ekleme. Yapılan yorumlar/çıkarımlar kesinlikle haber formatında olmalıdır.
 ${isOfficial ? `
 3. 5N1K: Spot, en önemli bilgiyi (Kim, Ne, Nerede, Ne Zaman) içermelidir.
 4. NESNELLİK: Duygusal yorumlardan kaçın, sadece gerçekleşen eylemi yalın bir dille yaz. Kaynakta yoksa yorumlayıcı çıkarım ekleme.
 5. TERS PİRAMİT: En can alıcı bilgiyi ilk cümlede ver.
 ` : `
-3. ULUSAL MEDYA STİLİ: Tıklama odaklı (CTR), merak uyandıran ve SEO anahtar kelimeleriyle zenginleştirilmiş spotlar üret.
+3. ULUSAL MEDYA STİLİ: Ulusal medyadaki gibi merak uyandırıcı, bilgiyi en çarpıcı haliyle sunan ama detay için içeri çeken kurgu. 5N1K unsurlarını merak tetikleyicileriyle harmanla.
 4. GİZEM: Haberin sonucunu veya can alıcı detayını söylemeyen, okuyucuyu içeri çekmeye zorlayan gizemli özet (Teaser).
 5. DİNAMİZM: Discover odaklı, merak uyandırıcı kurgu. "Peki, o detaylar neler?", "İşte yaşananlar..." gibi merak tetikleyicileri kullan.
 `}`,
@@ -665,13 +678,13 @@ export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promi
         Kurallar:
         1. METNİ KORU: Haber metnindeki paragraflara dokunma, sadece ara başlıkları değiştir.
         2. FORMAT: Ara başlıkların TAMAMI BÜYÜK HARF olmalıdır.
-        3. SEO & BAĞLAM: Ara başlıklar SEO uyumlu olmalı ve okuyucuyu bir sonraki paragrafa çekecek yapıda olmalıdır.
-        4. TONA ÖZEL KURALLAR:
-           - "SEO Uyumlu Özgün Haber" Modu: Ara başlıklar haber paragraflarıyla doğrudan bağlantılı, bilgilendirici ve ciddi olmalıdır. Büyük haber portallarındaki gibi SEO odaklı anahtar kelime öbekleri veya doğrudan bilgi veren soru kalıpları kullanılabilir. Haberdeki önemli beyanları tırnak içinde (" ") ara başlıklara taşıyarak vurgula.
-           - "Ulusal Medya Tipi Tık Odaklı" Modu: Ara başlıklar merak uyandırıcı, dinamik ve "cliffhanger" etkisi yaratan yapıda olmalıdır. Soru odaklı, heyecan verici ve anahtar kelime zengini olmalıdır. Okuyucunun arama motorunda sorduğu soruları ara başlığa taşı.
-           - "Daha Resmi ve Ciddi" Modu: Konuyla doğrudan alakalı, bölümün içeriğini özetleyen ve anahtar kelime içeren profesyonel başlıklar. "DETAYLAR" gibi genel ifadeler yerine "STRATEJİK ADIMLAR", "YENİ DÜZENLEMENİN KAPSAMI", "RESMİ MAKAMLARIN DEĞERLENDİRMESİ" gibi içerik odaklı başlıklar seç.
-        5. ÜSLUP: ${tone === 'SEO Uyumlu Özgün Haber' ? 'Resmi, otoriter ve net.' : tone === 'Daha Resmi ve Ciddi' ? 'Kurumsal, ciddi ve profesyonel.' : 'Dinamik, merak uyandırıcı ve ilgi çekici.'}
-        6. ÇIKTI: Sadece güncellenmiş haber metnini (body) döndür.`,
+        3. SEO & BAĞLAM: Ara başlıklar SEO uyumlu olmalı ve okuyucuyu bir sonraki paragrafa çekecek yapıda olmalıdır. Anlamsız, genel geçer ("DETAYLAR", "GELİŞMELER" vb.) başlıklar KESİNLİKLE YASAKTIR.
+        4. TIRNAK İÇİ VE CÜMLE KURALI: Ara başlıklar KESİNLİKLE TEK CÜMLE olmalıdır. Sadece doğrudan bir alıntı (birinin sözü) yapılıyorsa tırnak içinde (" ") verilmeli, aksi takdirde tırnak kullanılmamalıdır.
+        5. TONA ÖZEL KURALLAR:
+           - "SEO Uyumlu Özgün Haber" Modu: Ara başlıklar haber paragraflarıyla doğrudan bağlantılı, bilgilendirici ve ciddi olmalıdır. Büyük haber portallarındaki gibi SEO odaklı anahtar kelime öbekleri kullanılabilir.
+           - "Ulusal Medya Tipi Tık Odaklı" Modu: Ara başlıklar merak uyandırıcı, dinamik ve "cliffhanger" etkisi yaratan yapıda olmalıdır. Soru odaklı, heyecan verici ve anahtar kelime zengini olmalıdır.
+        6. ÜSLUP: ${tone === 'SEO Uyumlu Özgün Haber' ? 'Resmi, otoriter ve net.' : 'Dinamik, merak uyandırıcı ve ilgi çekici.'}
+        7. ÇIKTI: Sadece güncellenmiş haber metnini (body) döndür.`,
       }
     });
     const outputText = response.text;
@@ -703,7 +716,7 @@ export const createChatSession = (): Chat => {
   return ai.chats.create({
     model: 'gemini-3-flash-preview',
     config: {
-      systemInstruction: 'Sen Vakanüvis AI adında, soğukkanlı, nesnel ve profesyonel bir haber ajansı editörüsün. "Haberin Dijital Hafızası, Geleceğin Kalemi" sloganıyla hareket ediyorsun. Gazetecilik etiği, ajans dili, SEO ve haber kurgusu konularında uzmansın. Kullanıcı sorularına bu ciddiyetle ve uzmanlıkla cevap ver.',
+      systemInstruction: 'Sen Vakanüvis AI adında, soğukkanlı, nesnel ve profesyonel bir haber ajansı editörüsün. "Haberin Dijital Hafızası, Geleceğin Kalemi" sloganıyla hareket ediyorsun. Gazetecilik etiği, ajans dili, SEO ve haber kurgusu konularında uzmansın. Cümlelere aşırı yorumsal veya sıkıntılı kelimeler eklemezsin. Yapılan yorumların/çıkarımların her zaman haber formatında olmasına dikkat edersin. Kullanıcı sorularına bu ciddiyetle ve uzmanlıkla cevap ver.',
     },
   });
 };

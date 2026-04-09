@@ -1,5 +1,5 @@
 
-import { NewsMode } from '../../types';
+import { NewsMode } from '../types';
 
 export const getModePrompt = (mode: NewsMode): string => {
   const descriptions: Record<NewsMode, string> = {
@@ -8,7 +8,7 @@ export const getModePrompt = (mode: NewsMode): string => {
     'Ulusal Haber': 'Genel izleyici kitlesine yönelik resmi ve geniş kapsamlı dil.',
     'Siyaset & Politika': 'Tarafsız, terminolojiye hakim ve stratejik kurgu.',
     'Ekonomi': 'Veri odaklı, piyasa terimlerini içeren teknik anlatım.',
-    'Polis & Asayiş': 'Hukuki terimlere uygun, nesnel ve hızlı akış.',
+    'Polis & Asayiş': 'Hukuki terimlere uygun, nesnel ve hızlı akış. "Kıskıvrak yakalandılar", "kan donduran", "hukuk duvarına çarptı" gibi 3. sayfa klişelerinden ve abartılı mecazlardan KESİNLİKLE UZAK DUR.',
     'Bilim & Teknoloji': 'Yenilikçi, keşif odaklı ve açıklayıcı dil.',
     'Çevre': 'Sürdürülebilirlik ve ekoloji odaklı farkındalık dili.',
     'Spor': 'Dinamik, heyecan verici ve istatistik destekli kurgu.',
@@ -19,5 +19,5 @@ export const getModePrompt = (mode: NewsMode): string => {
     'Sağlık': 'Tıbbi terimlere dikkat eden, güvenilir ve halk sağlığı odaklı anlatım.'
   };
 
-  return `\nSEÇİLEN HABER MODU: ${mode}\nMOD TALİMATI: ${descriptions[mode]}\nEVRENSEL ANAYASA KURALI: Bu kategorideki haberi yazarken kaynak metindeki cümle yapılarını TAMAMEN TERK ET. Bilgiyi yeni bir hiyerarşi ve özgün bir anlatım diliyle sun. "Takla attırma" kuralı bu mod için de zorunludur. Tüm yazım sürecinde TDK kurallarına ve Haber SEO standartlarına %100 uyum sağla.`;
+  return `\nMOD: ${mode}\nTALİMAT: ${descriptions[mode]}\nKURAL: Kurguyu TAMAMEN YIK. "TAKLA ATTIRMA" (yeniden kurgulama) oranını en üst düzeye çıkar. Yepyeni hiyerarşiyle sun. 3 kelime kopyalama. TDK ve SEO'ya %100 uy. Başlık ve ara başlıklar '${mode}' ruhunu yansıtmalı. Özel isimlere dikkat et.`;
 };

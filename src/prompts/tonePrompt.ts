@@ -1,5 +1,5 @@
 
-import { NewsTone } from '../../types';
+import { NewsTone } from '../types';
 
 export const getTonePrompt = (tone: NewsTone): string => {
   const tones: Record<NewsTone, string> = {
@@ -16,16 +16,17 @@ TON: NESNEL, CİDDİ, SEO ODAKLI, YORUMSUZ.
   - Örnek 5: "İran'dan ABD'nin 'Destansı Öfke' söylemine İngilizce yanıt: 'Bu savaş destansı öfke değil destansı korku'"
   - Örnek 6: "Trendyol 1. Lig: Bodrum FK: 2 - Boluspor: 0"
   - Örnek 7: "Anamur’da Kadir Gecesinde Sakal-ı Şerif ziyarete açıldı"
-- SPOT: Haberin en can alıcı 5N1K bilgisini içeren, anahtar kelime zengini ve okuyucuyu habere hazırlayan profesyonel özet.
+- SPOT: Haberin en çarpıcı ve önemli bilgisini (5N1K) içeren, başlıkla metin arasında köprü kuran, okuyucuyu devamını okumaya ikna eden profesyonel ve nesnel özet.
 - NESNELLİK (KRİTİK): Kaynak metinde açıkça belirtilmediği sürece asla yorum, analiz veya "değerlendiriliyor", "görülüyor", "bekleniyor" gibi yoruma açık ifadeler ekleme. "Bir kez daha gözler önüne serdi", "dikkatleri üzerine çekti", "büyük yankı uyandırdı" gibi klişe ve yoruma dayalı dolgu cümlelerini KESİNLİKLE kullanma.
 - SONUÇ BÖLÜMÜ: Haberin sonuna kaynak metinde bulunmayan özetleyici yorumlar, "geleceğe dair beklentiler" veya "temenniler" ekleme. Haber, kaynak metindeki son bilgiyle net bir şekilde bitmelidir.
-- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Büyük haber sitelerindeki gibi "mini-manşet" niteliğinde, bilgilendirici, nesnel ve anahtar kelime odaklı. Bölümün içeriğini net bir şekilde yansıtan ifadeler seç. Önemli beyanları tırnak içinde (" ") ara başlıklara taşıyarak vurgula. "GELİŞMELER" veya "DETAYLAR" gibi genel başlıklar yerine "YENİ DÜZENLEMENİN KAPSAMI", "BAKANLIKTAN YAPILAN RESMİ AÇIKLAMA" gibi spesifik başlıklar kullan.
+- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Büyük haber sitelerindeki gibi "mini-manşet" niteliğinde, bilgilendirici, nesnel ve anahtar kelime odaklı. Bölümün içeriğini net bir şekilde yansıtan, paragraflarla tam uyumlu ifadeler seç. KESİNLİKLE TEK CÜMLE olmalı. TDK kurallarına uygun noktalama işaretleri (?, ", : vb.) kullanılabilir. "GELİŞMELER" veya "DETAYLAR" gibi genel başlıklar KESİNLİKLE YASAKTIR.
 - ALINTI KULLANIMI: Tırnak içindeki beyanları haberin akışına profesyonelce yedir. "Diyen...", "Vurgulayan...", "Şu ifadeleri kullandı:" gibi geçişlerle metni zenginleştir.
 - CÜMLE YAPISI: Metin genelinde cümle yapılarını çeşitlendir; sadece "özne + yüklem" şeklinde değil, devrik veya bağlaçlı cümlelerle akıcılığı sağla.
 `,
     'Ulusal Medya Tipi Tık Odaklı': `
-TON: YÜKSEK ETKİLEŞİMLİ, MERAK UYANDIRAN, SEO VE SORU ODAKLI.
-- BAŞLIK (CTR ODAKLI): Tıklama oranını artıracak (CTR), anahtar kelime odaklı, merak uyandıran ve çok katmanlı yapılar kullan. Sadece "||" kalıbına sıkışma; ünlem, soru, "İşte detaylar", "Müjde", "Flaş" gibi tetikleyicileri farklı kombinasyonlarla kullan.
+TON: YÜKSEK ETKİLEŞİMLİ, SORGULAYICI, MERAK UYANDIRICI, SEO VE SORU ODAKLI.
+- ULUSAL MEDYA ÜSLUBU (KRİTİK): Tıpkı büyük ulusal gazetelerin (Hürriyet, Milliyet, Sabah vb.) dijital yayınları gibi sorgulayıcı, merak uyandırıcı ve okuyucuyu içeri çeken bir dil kullan.
+- BAŞLIK (CTR ODAKLI): Tıklama oranını artıracak (CTR), anahtar kelime odaklı, merak uyandıran ve çok katmanlı yapılar kullan. Sadece "||" kalıbına sıkışma; ünlem, soru, "İşte detaylar", "Müjde", "Flaş" gibi tetikleyicileri farklı kombinasyonlarla kullan. Ancak "Kıskıvrak yakalandılar", "şok gelişme", "kan donduran", "sarsıldı", "duvara çarptı" gibi 3. sayfa klişelerinden ve abartılı mecazlardan KESİNLİKLE UZAK DUR.
   - KALIP ÇEŞİTLİLİĞİ (KRİTİK): Her haberde farklı bir yapı seç. Örnekler:
     - Soru & Yanıt: "X ne zaman? İşte 2026 X tarihleri ve merak edilenler"
     - Müjde/Haber: "Milyonlara müjde! X için beklenen tarih açıklandı: İşte detaylar"
@@ -36,30 +37,16 @@ TON: YÜKSEK ETKİLEŞİMLİ, MERAK UYANDIRAN, SEO VE SORU ODAKLI.
     - Zaman Odaklı: "Geri sayım başladı! X için son saatler: Kimleri kapsıyor?"
     - Rakam Odaklı: "Tam X TL oldu! Yeni liste yayınlandı: İşte kalem kalem fiyatlar"
     - Lokasyon Odaklı: "Adana'da yaşayanlar dikkat! Valilikten son dakika uyarısı geldi"
-- SPOT: Merak uyandırıcı, bilgiyi kısmen veren ama detay için içeri çeken kurgu. Mutlaka bir soru ile bitirilebilir veya "İşte o detaylar..." gibi bir köprü kurulabilir.
-- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Tıklama oranını (CTR) artıracak, merak uyandıran, genellikle soru kalıbında (Örn: "X SAAT KAÇTA?", "X BELLİ OLDU MU?") veya heyecan verici anahtar kelime öbekleri. Büyük haber sitelerindeki gibi "mini-manşet" tarzında kurgula. Okuyucunun arama motorunda sorduğu soruları ara başlığa taşı.
+- SPOT: Ulusal medyadaki gibi merak uyandırıcı, bilgiyi en çarpıcı haliyle sunan ama detay için içeri çeken kurgu. 5N1K unsurlarını merak tetikleyicileriyle harmanla. Mutlaka bir soru ile bitirilebilir veya "İşte o detaylar..." gibi bir köprü kurulabilir.
+- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Tıklama oranını (CTR) artıracak, merak uyandıran, haber metniyle ve paragraflarla tam uyumlu "mini-manşet" tarzında kurgula. KESİNLİKLE TEK CÜMLE olmalı. TDK kurallarına uygun noktalama işaretleri (?, ", : vb.) kullanılabilir. Okuyucunun arama motorunda sorduğu soruları da tırnak içi ifadelerle (eğer alıntıysa) harmanlayarak kullan.
 - ALINTI KULLANIMI: Önemli cümleleri tırnak içinde kullanarak habere derinlik ve güvenilirlik kat.
 - HABER METNİ (BODY):
   - SEO SORULARI: Metin içerisinde okuyucunun arama motorlarında sorduğu soruları (Örn: "Peki, LGS'ye kaç gün kaldı, başvuru tarihleri belli oldu mu?") doğal bir akışla kullan.
   - ANAHTAR KELİME TEKRARI: Anahtar kelimeleri (şehir ismi, sınav adı, yıl vb.) metin boyunca farklı varyasyonlarla sıkça geçir.
   - KURGU: Bilgiyi hemen verme, "merak boşluğu" yarat. "Peki, ...?", "İşte detaylar!", "Belli oldu mu?" gibi tetikleyicileri paragraf girişlerinde veya sonlarında kullan.
 - CÜMLE YAPISI: Tekdüze cümlelerden kaçın. Soru cümleleri, ünlemler ve kısa-vurucu ifadelerle metni hareketlendir. Kaynak metindeki anlatım sırasını tamamen değiştir.
-`,
-    'Daha Resmi ve Ciddi': `
-TON: RESMİ HABER DİLİ, CİDDİ, OTORİTER, PROTOKOL KURALLARINA UYGUN.
-- Bu mod, kurumsal duyuruları ve resmi açıklamaları "profesyonel bir haber ajansı" (AA stili) üslubuyla kurgular.
-- Metin bir "resmi yazışma" değil, bir "haber metni" olmalıdır. Akıcılık ve haber kurgusu ön plandadır.
-- BAŞLIK (OTORİTER): Ciddi, net ve otoriter. Kurumun veya yetkilinin adını ve ana mesajı içermeli. "Duyuru" kelimesinden kaçın, doğrudan haberi ver.
-  - Örnek: "Bakan Şimşek'ten vergi reformu açıklaması: 'Adaletli dağılım önceliğimiz'", "İçişleri Bakanlığı'ndan 81 ile genelge: Güvenlik önlemleri artırılıyor"
-- SPOT: Haberin en önemli bilgisini (5N1K) resmi ve ağırbaşlı bir dille özetleyen, okuyucuyu detaylara yönlendiren profesyonel giriş.
-- HABER METNİ (BODY):
-  - GAZETECİLİK ÜSLUBU: Resmi beyanları ve verileri haber akışı içinde eriterek sun. "Belirtildi", "vurgulandı", "ifade edildi", "kaydedildi" gibi profesyonel haber fiillerini kullan.
-  - TAKLA ATTIRMA: Kaynak metindeki cümle yapılarını tamamen değiştir, bilgiyi haber hiyerarşisine göre yeniden kurgula.
-  - PROTOKOL: Makam, mevki ve kurum isimlerini protokol kurallarına uygun şekilde tam ve doğru kullan.
-  - NESNELLİK: Tamamen tarafsız ve olgu odaklı kal. Duygusal yorumlardan kaçın.
-- ARA BAŞLIKLAR (TAMAMI BÜYÜK HARF): Konuyla doğrudan alakalı, bölümün içeriğini özetleyen ve anahtar kelime içeren profesyonel başlıklar. "DETAYLAR" gibi genel ifadeler yerine "STRATEJİK ADIMLAR", "YENİ DÜZENLEMENİN KAPSAMI", "RESMİ MAKAMLARIN DEĞERLENDİRMESİ" gibi içerik odaklı başlıklar seç.
 `
   };
 
-  return `\nSEÇİLEN TON: ${tone}\nTON TALİMATLARI: ${tones[tone]}\nEVRENSEL ANAYASA KURALI: Seçilen ton ne olursa olsun, kaynak metindeki cümle yapılarını TAMAMEN TERK ET. Haberi baştan kurgula ve "takla attırma" kuralını uygula. Haber sitesi entegrasyonu için nesnel, profesyonel ve yorumsuz bir dil kullan.`;
+  return `\nTON: ${tone}\nTALİMATLAR: ${tones[tone]}\nKURAL: Kaynak metnin yapısını TAMAMEN YIK. "TAKLA ATTIRMA" oranını en üst düzeye çıkar. Baştan kurgula, 3 kelime kopyalama. Nesnel, profesyonel ve yorumsuz dil kullan. Cümlelere aşırı yorumsal veya sıkıntılı kelimeler ekleme. Yapılan yorumlar/çıkarımlar kesinlikle haber formatında olmalıdır. Başlıklar ton ve kategoriyle %100 uyumlu olmalı. BAŞLIKLARDA SENTENCE CASE (Sadece ilk harf ve özel isimler büyük) KURALINA %100 UY. ARA BAŞLIKLAR TAMAMI BÜYÜK, TEK CÜMLE OLMALI VE SADECE ALINTI VARSA TIRNAK KULLANILMALI. Özel isimlere dikkat et.`;
 };

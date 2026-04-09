@@ -1,6 +1,6 @@
 import { SavedItem } from '../types';
 
-const STORAGE_KEY = 'news_assistant_history_v1';
+const STORAGE_KEY = 'news_assistant_history_v2_0';
 
 export const getHistory = (): SavedItem[] => {
   try {
@@ -22,12 +22,18 @@ export const saveHistory = (items: SavedItem[]) => {
 
 export const addItemToHistory = (item: SavedItem) => {
   const history = getHistory();
+  // Remove existing item with same id if it exists
+  const filteredHistory = history.filter(h => h.id !== item.id);
   // Add to beginning
-  const newHistory = [item, ...history];
-  // Limit history size to prevent overflow (e.g. 50 items)
-  if (newHistory.length > 50) {
-    newHistory.length = 50;
+  let newHistory = [item, ...filteredHistory];
+  
+  // Limit history size to prevent overflow, but NEVER delete archived items
+  if (newHistory.length > 100) {
+    const archived = newHistory.filter(h => h.status === 'archived');
+    const others = newHistory.filter(h => h.status !== 'archived').slice(0, 100);
+    newHistory = [...archived, ...others].sort((a, b) => b.timestamp - a.timestamp);
   }
+  
   saveHistory(newHistory);
   return newHistory;
 };

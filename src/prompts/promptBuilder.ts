@@ -1,5 +1,5 @@
 
-import { NewsMode, NewsTone } from '../../types';
+import { NewsMode, NewsTone } from '../types';
 import { SYSTEM_PROMPT } from './systemPrompt';
 import { getModePrompt } from './modePrompt';
 import { getTonePrompt } from './tonePrompt';

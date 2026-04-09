@@ -1,5 +1,5 @@
 
-export type NewsTone = 'SEO Uyumlu Özgün Haber' | 'Ulusal Medya Tipi Tık Odaklı' | 'Daha Resmi ve Ciddi';
+export type NewsTone = 'SEO Uyumlu Özgün Haber' | 'Ulusal Medya Tipi Tık Odaklı';
 
 export interface GroundingChunk {
   web?: {
@@ -176,12 +176,11 @@ export const NEWS_MODES: NewsMode[] = [
   'Sağlık'
 ];
 
-export const NEWS_TONES: NewsTone[] = ['SEO Uyumlu Özgün Haber', 'Ulusal Medya Tipi Tık Odaklı', 'Daha Resmi ve Ciddi'];
+export const NEWS_TONES: NewsTone[] = ['SEO Uyumlu Özgün Haber', 'Ulusal Medya Tipi Tık Odaklı'];
 
 export const TONE_DESCRIPTIONS: Record<NewsTone, string> = {
   'SEO Uyumlu Özgün Haber': 'Nesnel, %100 özgün ve SEO odaklı "takla attırılmış" haber.',
-  'Ulusal Medya Tipi Tık Odaklı': 'Yüksek etkileşimli, merak uyandıran ulusal medya tarzı içerik.',
-  'Daha Resmi ve Ciddi': 'Kurumsal duyurular, resmi açıklamalar ve ağırbaşlı haber dili.'
+  'Ulusal Medya Tipi Tık Odaklı': 'Yüksek etkileşimli, merak uyandıran ulusal medya tarzı içerik.'
 };
 
 export type NewsStatus = 'active' | 'archived' | 'trashed';
@@ -192,6 +191,7 @@ export interface SavedItem {
   status: NewsStatus;
   input: string;
   mode: NewsMode;
+  tone: NewsTone;
   output: GeneratedNews | null;
 }
 

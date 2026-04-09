@@ -74,6 +74,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [historyItems, setHistoryItems] = useState<SavedItem[]>([]);
+  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
   const [isKeyMissing, setIsKeyMissing] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -164,15 +165,18 @@ function App() {
       setAppState(AppState.SUCCESS);
       addToast("Haber başarıyla oluşturuldu!", "success");
 
+      const newId = currentHistoryId || generateId();
       const newItem: SavedItem = {
-        id: generateId(),
+        id: newId,
         timestamp: Date.now(),
         status: 'active',
         input: text,
         mode: newsConfig.mode,
+        tone: newsConfig.tone,
         output: news
       };
       setHistoryItems(addItemToHistory(newItem));
+      setCurrentHistoryId(newId);
 
     } catch (error: any) {
       console.error("Generation Error:", error);
@@ -200,29 +204,33 @@ function App() {
     const text = inputText.trim();
     if (!text) return;
     const newItem: SavedItem = {
-      id: generateId(),
+      id: currentHistoryId || generateId(),
       timestamp: Date.now(),
       status: 'archived',
       input: text,
       mode: newsConfig.mode,
+      tone: newsConfig.tone,
       output: generatedNews
     };
     setHistoryItems(addItemToHistory(newItem));
     setInputText('');
     setGeneratedNews(null);
     setAppState(AppState.IDLE);
+    setCurrentHistoryId(null);
     addToast("Haber arşive eklendi.", "info");
   };
 
   const handleClear = () => {
     const text = inputText.trim();
     if (text) {
+      // Always generate a new ID for the trashed backup so we don't overwrite archived/active items
       const newItem: SavedItem = {
         id: generateId(),
         timestamp: Date.now(),
         status: 'trashed',
         input: text,
         mode: newsConfig.mode,
+        tone: newsConfig.tone,
         output: generatedNews
       };
       setHistoryItems(addItemToHistory(newItem));
@@ -231,14 +239,16 @@ function App() {
     setGeneratedNews(null);
     setAppState(AppState.IDLE);
     setNewsConfig(DEFAULT_NEWS_CONFIG);
+    setCurrentHistoryId(null);
     addToast("Form temizlendi.", "info");
   };
 
   const handleRestore = (item: SavedItem) => {
     setInputText(item.input);
-    setNewsConfig(prev => ({ ...prev, mode: item.mode }));
+    setNewsConfig(prev => ({ ...prev, mode: item.mode, tone: item.tone || prev.tone }));
     setGeneratedNews(item.output);
     setAppState(item.output ? AppState.SUCCESS : AppState.IDLE);
+    setCurrentHistoryId(item.id);
     setIsHistoryOpen(false);
   };
 
@@ -289,19 +299,27 @@ function App() {
 
         {/* Loading Overlay */}
         {appState === AppState.LOADING && (
-          <div className="fixed inset-0 bg-white/60 dark:bg-slate-950/60 backdrop-blur-md z-50 flex flex-col items-center justify-center">
-             <div className="w-full max-w-sm p-8 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-center">
-                <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-6" />
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Vakanüvis Yazıyor</h3>
-                <p className="text-slate-500 dark:text-slate-400 text-xs mb-8">Haberin dijital hafızası kurgulanıyor.</p>
-                
-                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 mb-4 overflow-hidden">
-                   <div 
-                      className="bg-blue-600 h-1 rounded-full transition-all duration-500 ease-out" 
-                      style={{ width: `${((loadingStep + 1) / LOADING_STEPS.length) * 100}%` }}
-                   />
+          <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-in fade-in duration-300">
+             <div className="w-full max-w-md p-10 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-center shadow-2xl transform transition-all">
+                <div className="relative w-20 h-20 mx-auto mb-8">
+                  <div className="absolute inset-0 border-4 border-blue-100 dark:border-slate-800 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Feather className="w-8 h-8 text-blue-600 animate-pulse" />
+                  </div>
                 </div>
-                <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Vakanüvis Yazıyor</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 font-medium">Haberin dijital hafızası kurgulanıyor.</p>
+                
+                <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 mb-4 overflow-hidden shadow-inner">
+                   <div 
+                      className="bg-gradient-to-r from-blue-500 to-blue-700 h-2 rounded-full transition-all duration-700 ease-out relative overflow-hidden" 
+                      style={{ width: `${((loadingStep + 1) / LOADING_STEPS.length) * 100}%` }}
+                   >
+                     <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]"></div>
+                   </div>
+                </div>
+                <p className="text-[11px] font-black text-blue-600 uppercase tracking-[0.2em] animate-pulse">
                    {LOADING_STEPS[loadingStep]}
                 </p>
              </div>
@@ -338,7 +356,7 @@ function App() {
                 <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-blue-600 flex items-center justify-center">
                   <Feather className="w-4 h-4 text-white" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-widest uppercase">Vakanüvis AI</h2>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-widest uppercase">Vakanüvis AI v3.0 PRO</h2>
               </div>
               <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed font-medium italic">
                 "Vakanüvis, bin yıllık yazım geleneğini yapay zekanın hızıyla birleştiren profesyonel bir dijital editördür."
@@ -351,7 +369,7 @@ function App() {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Vakanüvis AI</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">© 2026 Vakanüvis AI v3.0 PRO</p>
             <div className="flex space-x-6">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-default hover:text-blue-600 transition-colors">Hızlı</span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-default hover:text-blue-600 transition-colors">SEO</span>
@@ -388,30 +406,34 @@ function App() {
       {/* Welcome Modal */}
       {showWelcome && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-500">
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                <Feather className="w-8 h-8 text-white" />
+          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-500">
+            <div className="p-10 text-center">
+              <div className="w-20 h-20 bg-slate-900 dark:bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                <Feather className="w-10 h-10 text-white" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-widest mb-2">Vakanüvis AI</h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">Haberin dijital hafızasına hoş geldiniz.</p>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] mb-3">Vakanüvis AI</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-base mb-10 font-medium">Haberin dijital hafızasına hoş geldiniz.</p>
               
-              <div className="grid grid-cols-1 gap-4 mb-8 text-left">
-                <div className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                  <Zap className="w-4 h-4 text-blue-600" />
-                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Hızlı ve özgün haber üretimi</span>
+              <div className="grid grid-cols-1 gap-4 mb-10 text-left">
+                <div className="flex items-center space-x-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <div className="p-2 bg-white dark:bg-slate-700 rounded-xl shadow-sm">
+                    <Zap className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">Hızlı ve özgün haber üretimi</span>
                 </div>
-                <div className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                  <Search className="w-4 h-4 text-emerald-600" />
-                  <span className="text-xs font-medium text-slate-700 dark:text-slate-200">SEO ve Discover optimizasyonu</span>
+                <div className="flex items-center space-x-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                  <div className="p-2 bg-white dark:bg-slate-700 rounded-xl shadow-sm">
+                    <Search className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">SEO ve Discover optimizasyonu</span>
                 </div>
               </div>
               
               <button 
                 onClick={closeWelcome}
-                className="w-full py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-blue-700 transition-all"
+                className="w-full py-4 bg-slate-900 dark:bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-800 dark:hover:bg-blue-700 transition-all shadow-lg hover:scale-[1.02] active:scale-95"
               >
-                Başla
+                Sisteme Giriş Yap
               </button>
             </div>
           </div>

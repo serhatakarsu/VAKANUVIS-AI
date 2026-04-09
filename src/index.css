@@ -6,19 +6,19 @@
 }
 
 :root {
-  --ink: #0f172a;
+  --ink: #18181b;
   --paper: #ffffff;
-  --accent: #2563eb;
-  --muted: #64748b;
-  --border: #e2e8f0;
+  --accent: #4f46e5;
+  --muted: #71717a;
+  --border: #e4e4e7;
 }
 
 .dark {
-  --ink: #f8fafc;
-  --paper: #020617;
-  --accent: #3b82f6;
-  --muted: #94a3b8;
-  --border: #1e293b;
+  --ink: #fafafa;
+  --paper: #09090b;
+  --accent: #6366f1;
+  --muted: #a1a1aa;
+  --border: #27272a;
 }
 
 body {
@@ -47,7 +47,8 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -63,6 +64,31 @@ body {
   background: var(--border);
 }
 
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
 .text-balance {
   text-wrap: balance;
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Exclude transitions for transforms and opacity to avoid conflicts with Tailwind classes */
+.transform-none-transition {
+  transition-property: none !important;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
