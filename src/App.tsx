@@ -54,7 +54,12 @@ const generateId = () => {
 };
 
 function App() {
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vakanuvis_input_text') || '';
+    }
+    return '';
+  });
   const [newsConfig, setNewsConfig] = useState<NewsConfig>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('vakanuvis_news_config');
@@ -68,9 +73,38 @@ function App() {
     }
     return DEFAULT_NEWS_CONFIG;
   });
-  const [advancedFeatures, setAdvancedFeatures] = useState<AdvancedFeatures>(DEFAULT_ADVANCED_FEATURES);
-  const [generatedNews, setGeneratedNews] = useState<GeneratedNews | null>(null);
-  const [appState, setAppState] = useState<AppState>(AppState.IDLE);
+  const [advancedFeatures, setAdvancedFeatures] = useState<AdvancedFeatures>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vakanuvis_advanced_features');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return DEFAULT_ADVANCED_FEATURES;
+        }
+      }
+    }
+    return DEFAULT_ADVANCED_FEATURES;
+  });
+  const [generatedNews, setGeneratedNews] = useState<GeneratedNews | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('vakanuvis_generated_news');
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
+  const [appState, setAppState] = useState<AppState>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vakanuvis_generated_news') ? AppState.SUCCESS : AppState.IDLE;
+    }
+    return AppState.IDLE;
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [historyItems, setHistoryItems] = useState<SavedItem[]>([]);
@@ -125,6 +159,22 @@ function App() {
     localStorage.setItem('vakanuvis_news_config', JSON.stringify(newsConfig));
   }, [newsConfig]);
 
+  useEffect(() => {
+    localStorage.setItem('vakanuvis_input_text', inputText);
+  }, [inputText]);
+
+  useEffect(() => {
+    localStorage.setItem('vakanuvis_advanced_features', JSON.stringify(advancedFeatures));
+  }, [advancedFeatures]);
+
+  useEffect(() => {
+    if (generatedNews) {
+      localStorage.setItem('vakanuvis_generated_news', JSON.stringify(generatedNews));
+    } else {
+      localStorage.removeItem('vakanuvis_generated_news');
+    }
+  }, [generatedNews]);
+
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const addToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -145,17 +195,34 @@ function App() {
     setIsKeyMissing(false);
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     const text = inputText.trim();
     if (!text) return;
 
     // Reset state for a fresh start
     setAppState(AppState.LOADING);
     setErrorMessage(null);
-    setGeneratedNews(null); // Clear previous news to ensure loading overlay shows
+    
+    // Check for API key before starting
+    const hasKey = await checkApiKeySelection();
+    if (!hasKey) {
+      setIsKeyMissing(true);
+      setAppState(AppState.ERROR);
+      setErrorMessage("Lütfen devam etmek için bir API anahtarı seçin.");
+      return;
+    }
 
     try {
-      const news = await generateNewsContent(text, newsConfig.mode, newsConfig.tone, advancedFeatures);
+      // Add a client-side timeout of 60 seconds
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("İşlem çok uzun sürdü. Lütfen tekrar deneyin.")), 60000)
+      );
+
+      const news = await Promise.race([
+        generateNewsContent(text, newsConfig.mode, newsConfig.tone, advancedFeatures),
+        timeoutPromise
+      ]) as GeneratedNews;
       
       if (!news) {
         throw new Error("Haber içeriği oluşturulamadı. Lütfen tekrar deneyin.");
@@ -200,7 +267,8 @@ function App() {
     }
   };
 
-  const handleArchive = () => {
+  const handleArchive = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     const text = inputText.trim();
     if (!text) return;
     const newItem: SavedItem = {
@@ -220,7 +288,8 @@ function App() {
     addToast("Haber arşive eklendi.", "info");
   };
 
-  const handleClear = () => {
+  const handleClear = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     const text = inputText.trim();
     if (text) {
       // Always generate a new ID for the trashed backup so we don't overwrite archived/active items
@@ -281,21 +350,35 @@ function App() {
       
       <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {errorMessage && (
-          <div className="mb-6 bg-rose-50 border-l-4 border-rose-500 p-5 rounded-xl shadow-sm max-w-4xl mx-auto flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+      {errorMessage && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] w-full max-w-2xl animate-in slide-in-from-top-4 duration-500">
+          <div className="mx-4 bg-rose-600 text-white p-4 rounded-2xl shadow-2xl flex items-center justify-between border border-rose-500 ring-4 ring-rose-600/20">
             <div className="flex items-center space-x-3">
-              <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
-              <span className="text-sm text-rose-700 font-bold">{errorMessage}</span>
+              <div className="p-2 bg-white/20 rounded-xl">
+                <AlertCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Sistem Hatası</p>
+                <p className="text-sm font-bold leading-tight">{errorMessage}</p>
+              </div>
             </div>
-            <button 
-              onClick={handleGenerate}
-              className="flex items-center space-x-1.5 bg-rose-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-black hover:bg-rose-700 transition-colors"
-            >
-              <RefreshCw className="w-2.5 h-2.5" />
-              <span>TEKRAR DENE</span>
-            </button>
+            <div className="flex items-center space-x-2">
+              <button 
+                onClick={handleGenerate}
+                className="bg-white text-rose-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-rose-50 transition-all active:scale-95 whitespace-nowrap"
+              >
+                Yeniden Dene
+              </button>
+              <button 
+                onClick={() => setErrorMessage(null)}
+                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
         {/* Loading Overlay */}
         {appState === AppState.LOADING && (
@@ -343,7 +426,12 @@ function App() {
             />
           </div>
           <div className="lg:col-span-7 h-full min-h-[600px] lg:min-h-0">
-            <OutputSection news={generatedNews} isEmpty={appState === AppState.IDLE || (appState === AppState.LOADING && !generatedNews)} onArchive={handleArchive} selectedTone={newsConfig.tone} />
+            <OutputSection 
+              news={generatedNews} 
+              isEmpty={!generatedNews} 
+              onArchive={handleArchive} 
+              selectedTone={newsConfig.tone} 
+            />
           </div>
         </div>
       </main>

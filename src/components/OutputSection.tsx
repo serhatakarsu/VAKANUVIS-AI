@@ -22,7 +22,7 @@ interface OutputSectionProps {
 export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onArchive, selectedTone }) => {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'resmi' | 'seo_panel' | 'comparison' | 'advanced'>('resmi');
-  const [editedNews, setEditedNews] = useState<GeneratedNews | null>(null);
+  const [editedNews, setEditedNews] = useState<GeneratedNews | null>(news);
   const [showHeadlineAlts, setShowHeadlineAlts] = useState(false);
   const [showSpotAlts, setShowSpotAlts] = useState(false);
   const [refinedHeadlineData, setRefinedHeadlineData] = useState<HeadlineRefinement | null>(null);
@@ -130,24 +130,24 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
   }
 
   const renderBody = (text: string) => {
-    // Split by double newlines to identify paragraphs and subheadings
-    const blocks = text.split(/\n\s*\n/).filter(b => b.trim().length > 0);
+    // Split by single or multiple newlines to be more robust
+    const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length > 0);
     
-    return blocks.map((block, index) => {
-      let trimmedLine = block.trim();
-      
-      const isMarkdownH2 = trimmedLine.startsWith('## ');
-      const isMarkdownH3 = trimmedLine.startsWith('### ');
+    return lines.map((line, index) => {
       // Improved header detection: All caps, not too long, not too short
+      // We allow periods here but strip them for display if it's a header
+      const isMarkdownH2 = line.startsWith('## ');
+      const isMarkdownH3 = line.startsWith('### ');
+      
+      const cleanLine = line.replace(/^#+\s+/, '').trim();
       const isLegacyHeader = !isMarkdownH2 && !isMarkdownH3 && 
-                            trimmedLine === trimmedLine.toUpperCase() && 
-                            trimmedLine.length > 5 && 
-                            trimmedLine.length < 120 &&
-                            !trimmedLine.includes('.'); // Headers usually don't end with a period
+                            cleanLine === cleanLine.toUpperCase() && 
+                            cleanLine.length > 5 && 
+                            cleanLine.length < 150;
 
       if (isMarkdownH2 || isMarkdownH3 || isLegacyHeader) {
-        const rawText = trimmedLine.replace(/^#+\s+/, '');
-        const displayText = rawText.toLocaleUpperCase('tr-TR');
+        // Strip trailing period if exists in header
+        const displayText = cleanLine.replace(/\.$/, '').toLocaleUpperCase('tr-TR');
         
         return (
           <div key={index} className="mt-10 mb-6">
@@ -159,7 +159,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
       }
       
       // Handle Quotes: if line starts and ends with double quotes
-      if (trimmedLine.startsWith('"') && trimmedLine.endsWith('"')) {
+      if (line.startsWith('"') && line.endsWith('"')) {
         return (
           <blockquote 
             key={index}
@@ -167,7 +167,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
           >
             <Quote className="absolute -top-4 -left-4 w-24 h-24 text-zinc-200 dark:text-zinc-700/30 transform -rotate-12 transition-transform group-hover:scale-110 duration-500" />
             <p className="text-2xl md:text-3xl font-serif font-bold italic text-zinc-800 dark:text-zinc-200 leading-relaxed relative z-10">
-              {trimmedLine}
+              {line}
             </p>
           </blockquote>
         );
@@ -178,7 +178,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
           key={index} 
           className="mb-8 text-justify text-zinc-700 dark:text-zinc-300 leading-[1.8] text-lg md:text-xl font-serif antialiased tracking-tight"
         >
-          {trimmedLine}
+          {line}
         </p>
       );
     });

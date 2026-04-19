@@ -5,9 +5,9 @@ import { buildPrompt } from "../prompts/promptBuilder";
 
 // Initialize the Gemini client inside functions to pick up latest API key
 const getAiClient = (forceFree = false) => {
-  const apiKey = forceFree 
-    ? (process.env.GEMINI_API_KEY || process.env.API_KEY || '') 
-    : (process.env.API_KEY || process.env.GEMINI_API_KEY || '');
+  // In AI Studio Build, GEMINI_API_KEY is the standard for the user's project
+  // We check for both but prefer GEMINI_API_KEY as primary.
+  const apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY || '');
   return new GoogleGenAI({ apiKey });
 };
 
@@ -99,15 +99,15 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     const properties: any = {
       headline: { 
         type: Type.STRING, 
-        description: "Haber Başlığı. KRİTİK: Sadece ilk harf ve özel isimler büyük yazılmalı (Sentence case). Kategori ve tonla %100 uyumlu, SEO odaklı, çarpıcı." 
+        description: "Haber Başlığı. KRİTİK: Sadece ilk harf ve özel isimler büyük yazılmalı (Sentence case). Kategori ve tonla %100 uyumlu, SEO odaklı, çarpıcı. Ulusal Medya tonunda CLICKBAIT ve SEO olarak güçlendirilmiş olmalı." 
       },
       spot: { 
         type: Type.STRING, 
-        description: "Haber Spotu (Lead). 1-2 cümlelik, haberi özetleyen, anahtar kelime zengini ve başlığı destekleyen vurucu metin." 
+        description: "Haber Spotu (Lead). 1-2 cümlelik, haberi özetleyen, anahtar kelime zengini ve başlığı destekleyen vurucu metin. Ulusal Medya tonunda CLICKBAIT ve SEO olarak güçlendirilmiş olmalı." 
       },
       body: { 
         type: Type.STRING,
-        description: "Haber Metni. KRİTİK: En az 2-4 adet ARA BAŞLIK içermeli. Ara başlıklar TAMAMI BÜYÜK HARF ve TEK CÜMLE olmalı. Sadece doğrudan alıntı varsa tırnak içinde (\" \") yazılmalı, aksi halde tırnak kullanılmamalı."
+        description: "Haber Metni. KRİTİK: En az 2-4 adet ARA BAŞLIK içermeli. Ara başlıklar TAMAMI BÜYÜK HARF ve TEK CÜMLE olmalı. TDK noktalama kuralları TAMAMEN uygulanmalı ancak ara başlık sonunda KESİNLİKLE NOKTA (.) kullanılmamalıdır. Her ara başlıktan önce ve sonra ve her paragraf arasında mutlaka ÇİFT SATIR BOŞLUĞU (\\n\\n) bırakılmalıdır. Sadece doğrudan alıntı varsa tırnak içinde (\" \") yazılmalı, aksi halde tırnak kullanılmamalı. Ulusal Medya tonunda ara başlıklar CLICKBAIT ve SEO olarak güçlendirilmiş olmalı."
       },
       metaTitle: { type: Type.STRING, description: "SEO Meta Title (max 60 kar)." },
       metaDescription: { type: Type.STRING, description: "SEO Meta Desc (max 160 kar)." },
@@ -418,10 +418,10 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     }
 
     const config: any = {
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       systemInstruction: buildPrompt(mode, tone, extraInstructions),
       responseMimeType: "application/json",
       maxOutputTokens: 8192,
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
       responseSchema: {
         type: Type.OBJECT,
         properties,
@@ -431,6 +431,8 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
 
     if (!disableSearch) {
       config.tools = [{ googleSearch: {} }];
+      // Enable server side tool invocations for tool hybrid mode (required for some Gemini 3 configs)
+      config.includeServerSideToolInvocations = true;
     }
 
     const response = await ai.models.generateContent({
@@ -484,27 +486,28 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
   };
 
   const mainCall = async (forceFree = false, disableSearch = false) => {
+    // We use gemini-flash-latest and gemini-pro-latest as stable aliases
+    const flashModel = 'gemini-3-flash-preview';
+    const proModel = 'gemini-3.1-pro-preview';
+
     try {
-      return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree, disableSearch), 2);
+      // Primary attempt with Flash model
+      return await withRetry((ff) => callApi(flashModel, ff || forceFree, disableSearch), 2);
     } catch (error: any) {
       const errorMessage = error?.message || String(error);
       
-      // Handle Search Grounding Quota or 500 errors that might be tool-related
-      if ((errorMessage.includes('search_grounding') || errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) && !disableSearch) {
-        console.warn("Search grounding quota exceeded or 500 error detected. Retrying without search...");
+      // If we hit a tool-related 500 or search_grounding issue, retry once without search
+      if (!disableSearch && (errorMessage.includes('search_grounding') || errorMessage.includes('500') || errorMessage.includes('Internal Server Error'))) {
+        console.warn("Retrying without search grounding due to API error...");
         return await mainCall(forceFree, true);
       }
 
-      if (errorMessage.includes('spending cap') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-        throw error;
-      }
-      
-      console.warn("Flash model failed, falling back to Pro model...", error);
-      await new Promise(resolve => setTimeout(resolve, 500)); // Shorter delay before fallback
+      // If flash fails with non-quota error, or we want to try a more capable model
+      console.warn("Primary model failed, attempting Pro model fallback...", error);
       try {
-        return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree, disableSearch), 1); // Only 1 retry for Pro fallback
+        return await withRetry((ff) => callApi(proModel, ff || forceFree, disableSearch), 1);
       } catch (proError: any) {
-        console.error("Gemini API Final Error:", proError);
+        console.error("Critical failure in Pro model fallback:", proError);
         throw proError;
       }
     }
@@ -520,17 +523,16 @@ export const refineHeadline = async (currentHeadline: string, newsBody: string, 
       model: modelName,
       contents: `Mevcut Başlık: ${currentHeadline}\n\nHaber İçeriği (Özet): ${newsBody.slice(0, 800)}`,
       config: {
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         systemInstruction: `Sen profesyonel bir haber editörüsün. Görevin, mevcut başlığı ${tone} moduna uygun 5 farklı alternatif başlığa dönüştürmektir. 
 
 Kurallar (${tone} Modu):
-1. BAŞLIK MÜHENDİSLİĞİ: Başlık net, bilgilendirici ama sıkıcı değil; kapsayıcı ve otoriter olmalı.
+1. BAŞLIK MÜHENDİSLİĞİ: Başlık ulusal medyadaki gibi güçlü, çarpıcı, bilgilendirici ama sıkıcı değil; kapsayıcı ve otoriter olmalı.
 2. FORMAT (KRİTİK): Başlıklarda yalnızca özel isimler ve cümlenin ilk kelimesi büyük harfle başlamalıdır. Diğer tüm kelimeler küçük harfle yazılmalıdır. (Sentence case + özel isimler).
 3. ANAHTAR KELİME: Anahtar kelimeyi mutlaka başlığın başına yerleştir.
 4. YORUM VE KELİME SEÇİMİ: Cümlelere aşırı yorumsal veya sıkıntılı kelimeler ekleme. Yapılan yorumlar/çıkarımlar kesinlikle haber formatında olmalıdır.
 ${tone === 'SEO Uyumlu Özgün Haber' ? `
-5. NESNELLİK: Duygusal sıfatlardan, yorumlardan ve "süslü" kelimelerden tamamen kaçın. Kaynak metinde olmayan yorumlayıcı çıkarımları (örn: "...olarak değerlendiriliyor") ekleme.
-6. GAZETE/PORTAL STİLİ: Başlıklar kesinlikle abartıdan uzak, doğrudan haberi veren, ciddi, nesnel ve bilgilendirici olmalıdır. "Son dakika", "kritik açıklama", "şok gelişme" gibi tıklama tuzaklarından (clickbait) KESİNLİKLE uzak dur. Sadece cümlenin ilk harfi ve özel isimler büyük yazılmalıdır. Haberin özünü en net ve yalın haliyle yansıt.
+5. NESNELLİK: Duygusal sıfatlardan, yorumlardan, "bağın gücünü gösterdi" gibi klişelerden ve "süslü" kelimelerden tamamen kaçın. Kaynak metinde olmayan yorumlayıcı çıkarımları ekleme.
+6. GAZETE/PORTAL STİLİ: Başlıklar ulusal medyadaki SEO haberleri gibi güçlü, doğrudan haberi veren, ciddi, nesnel ve bilgilendirici olmalıdır. "Son dakika", "kritik açıklama" gibi tıklama tuzaklarından KESİNLİKLE uzak dur. Sadece cümlenin ilk harfi ve özel isimler büyük yazılmalıdır. Haberin özünü en net, yalın ve otoriter haliyle yansıt.
   - Örnek 1: "Atatürk’ün Mersin’e gelişinin 103’üncü yıl dönümü törenle kutlandı"
   - Örnek 2: "Yüreğir Belediyesi'nden ibadethanelerde bayram temizliği"
   - Örnek 3: "Prof. Dr. Çelik: 'Onkofertilite kanser tedavisi alan hastaya gelecekteki ebeveynlik şansını koruma imkanı sunar'"
@@ -538,11 +540,11 @@ ${tone === 'SEO Uyumlu Özgün Haber' ? `
   - Örnek 5: "İran'dan ABD'nin 'Destansı Öfke' söylemine İngilizce yanıt: 'Bu savaş destansı öfke değil destansı korku'"
 7. DİL: Nesnel ama akıcı ve editoryal yapı.
 ` : `
-5. ULUSAL MEDYA STİLİ: Tıklama odaklı (Clickbait), merak uyandıran ve SEO anahtar kelimeleriyle zenginleştirilmiş başlıklar üret.
+5. ULUSAL MEDYA STİLİ: Tıklama odaklı (CLICKBAIT), merak uyandıran ve SEO anahtar kelimeleriyle CLICKBAIT olarak güçlendirilmiş başlıklar üret.
 6. SORU ODAKLI: "Saat kaçta?", "Ne zaman?", "Belli oldu mu?" gibi okuyucunun arama motorlarında sorduğu soruları başlığa taşı.
-7. GİZEM VE DİNAMİZM: Haberin sonucunu başlıkta verme, okuyucuyu tıklamaya zorla.
+7. GİZEM VE DİNAMİZM: Haberin sonucunu başlıkta verme, okuyucuyu tıklamaya zorla (CLICKBAIT).
 `}`,
-        ...(modelName === 'gemini-3-pro-preview' ? { thinkingConfig: { thinkingBudget: 2048 } } : {}),
+        ...(modelName === 'gemini-3.1-pro-preview' ? { thinkingConfig: { thinkingBudget: 2048 } } : {}),
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -585,7 +587,7 @@ ${tone === 'SEO Uyumlu Özgün Haber' ? `
     try {
       return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree));
     } catch (error: any) {
-      return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree), 2);
+      return await withRetry((ff) => callApi('gemini-3.1-pro-preview', ff || forceFree), 2);
     }
   };
 
@@ -605,18 +607,18 @@ export const refineSpot = async (currentSpot: string, newsBody: string, tone: Ne
 Haberin spot kısmı (özet/lead); başlıkla metin arasında yer alan, habere dair en çarpıcı, önemli veya ilginç bilgiyi sunan özet cümlesidir. Okuyucunun ilgisini çekerek metnin devamını okumaya ikna etmeyi amaçlayan spotlar; kısa, net, tarafsız, merak uyandırıcı ve temel 5N1K unsurlarını içermelidir.
 
 Kriterler (${tone} Modu):
-1. VURUCU GİRİŞ: Haberi en kapsayıcı ve otoriter şekilde özetle.
-2. YORUM VE KELİME SEÇİMİ: Cümlelere aşırı yorumsal veya sıkıntılı kelimeler ekleme. Yapılan yorumlar/çıkarımlar kesinlikle haber formatında olmalıdır.
+1. VURUCU GİRİŞ: Haberi ulusal medya ciddiyetinde, en kapsayıcı ve otoriter şekilde özetle.
+2. YORUM VE KELİME SEÇİMİ: Cümlelere aşırı yorumsal, duygusal veya "bağın gücünü gösterdi", "dikkatleri üzerine çekti" gibi klişe ifadeler ekleme. Yapılan yorumlar/çıkarımlar kesinlikle haber formatında olmalıdır.
 ${isOfficial ? `
 3. 5N1K: Spot, en önemli bilgiyi (Kim, Ne, Nerede, Ne Zaman) içermelidir.
-4. NESNELLİK: Duygusal yorumlardan kaçın, sadece gerçekleşen eylemi yalın bir dille yaz. Kaynakta yoksa yorumlayıcı çıkarım ekleme.
+4. NESNELLİK: Duygusal yorumlardan ve klişelerden kaçın, sadece gerçekleşen eylemi yalın bir dille yaz.
 5. TERS PİRAMİT: En can alıcı bilgiyi ilk cümlede ver.
 ` : `
-3. ULUSAL MEDYA STİLİ: Ulusal medyadaki gibi merak uyandırıcı, bilgiyi en çarpıcı haliyle sunan ama detay için içeri çeken kurgu. 5N1K unsurlarını merak tetikleyicileriyle harmanla.
-4. GİZEM: Haberin sonucunu veya can alıcı detayını söylemeyen, okuyucuyu içeri çekmeye zorlayan gizemli özet (Teaser).
-5. DİNAMİZM: Discover odaklı, merak uyandırıcı kurgu. "Peki, o detaylar neler?", "İşte yaşananlar..." gibi merak tetikleyicileri kullan.
+3. ULUSAL MEDYA STİLİ: Ulusal medyadaki gibi merak uyandırıcı, bilgiyi en çarpıcı haliyle sunan ama detay için içeri çeken CLICKBAIT kurgu. 5N1K unsurlarını merak tetikleyicileriyle harmanla. SEO olarak güçlendir.
+4. GİZEM: Haberin sonucunu veya can alıcı detayını söylemeyen, okuyucuyu içeri çekmeye zorlayan gizemli CLICKBAIT özet (Teaser).
+5. DİNAMİZM: Discover odaklı, merak uyandırıcı CLICKBAIT kurgu. "Peki, o detaylar neler?", "İşte yaşananlar..." gibi merak tetikleyicileri kullan.
 `}`,
-        ...(modelName === 'gemini-3-pro-preview' ? { thinkingConfig: { thinkingBudget: 2048 } } : {}),
+        ...(modelName === 'gemini-3.1-pro-preview' ? { thinkingConfig: { thinkingBudget: 2048 } } : {}),
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -659,7 +661,7 @@ ${isOfficial ? `
     try {
       return await withRetry((ff) => callApi('gemini-3-flash-preview', ff || forceFree));
     } catch (error: any) {
-      return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree), 2);
+      return await withRetry((ff) => callApi('gemini-3.1-pro-preview', ff || forceFree), 2);
     }
   };
 
@@ -678,11 +680,11 @@ export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promi
         Kurallar:
         1. METNİ KORU: Haber metnindeki paragraflara dokunma, sadece ara başlıkları değiştir.
         2. FORMAT: Ara başlıkların TAMAMI BÜYÜK HARF olmalıdır.
-        3. SEO & BAĞLAM: Ara başlıklar SEO uyumlu olmalı ve okuyucuyu bir sonraki paragrafa çekecek yapıda olmalıdır. Anlamsız, genel geçer ("DETAYLAR", "GELİŞMELER" vb.) başlıklar KESİNLİKLE YASAKTIR.
-        4. TIRNAK İÇİ VE CÜMLE KURALI: Ara başlıklar KESİNLİKLE TEK CÜMLE olmalıdır. Sadece doğrudan bir alıntı (birinin sözü) yapılıyorsa tırnak içinde (" ") verilmeli, aksi takdirde tırnak kullanılmamalıdır.
+        3. SEO & BAĞLAM (KRİTİK): Ara başlıklar SEO uyumlu olmalı ve takip eden paragrafın içeriğiyle %100 uyumlu olmalıdır.
+        4. NOKTALAMA VE TDK (HAYATİ): Ara başlıklarda TDK noktalama kuralları TAMAMEN uygulanmalıdır. Soru işareti (?), tırnak işareti ("), iki nokta (:), ünlem (!) ve çizgi (-) gibi işaretleri mutlaka kullan. Özellikle bir kişinin sözü veya merak uyandıran bir soru varsa bunu noktalama ile vurgula. Ara başlık sonunda KESİNLİKLE NOKTA (.) kullanılmamalıdır.
         5. TONA ÖZEL KURALLAR:
            - "SEO Uyumlu Özgün Haber" Modu: Ara başlıklar haber paragraflarıyla doğrudan bağlantılı, bilgilendirici ve ciddi olmalıdır. Büyük haber portallarındaki gibi SEO odaklı anahtar kelime öbekleri kullanılabilir.
-           - "Ulusal Medya Tipi Tık Odaklı" Modu: Ara başlıklar merak uyandırıcı, dinamik ve "cliffhanger" etkisi yaratan yapıda olmalıdır. Soru odaklı, heyecan verici ve anahtar kelime zengini olmalıdır.
+           - "Ulusal Medya Tipi Tık Odaklı" Modu: Ara başlıklar merak uyandırıcı, dinamik ve CLICKBAIT etkisi yaratan yapıda olmalıdır. Soru odaklı, heyecan verici ve anahtar kelime zengini (SEO güçlendirilmiş) olmalıdır.
         6. ÜSLUP: ${tone === 'SEO Uyumlu Özgün Haber' ? 'Resmi, otoriter ve net.' : 'Dinamik, merak uyandırıcı ve ilgi çekici.'}
         7. ÇIKTI: Sadece güncellenmiş haber metnini (body) döndür.`,
       }
@@ -701,7 +703,7 @@ export const refineSubheadings = async (newsBody: string, tone: NewsTone): Promi
     } catch (error: any) {
       console.error("Refine Subheadings Error:", error);
       try {
-        return await withRetry((ff) => callApi('gemini-3-pro-preview', ff || forceFree), 2);
+        return await withRetry((ff) => callApi('gemini-3.1-pro-preview', ff || forceFree), 2);
       } catch (proError: any) {
         throw proError;
       }
