@@ -17,9 +17,10 @@ interface OutputSectionProps {
   isEmpty: boolean;
   onArchive: () => void;
   selectedTone: NewsTone;
+  onNewsChange?: (news: GeneratedNews | null) => void;
 }
 
-export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onArchive, selectedTone }) => {
+export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onArchive, selectedTone, onNewsChange }) => {
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'resmi' | 'seo_panel' | 'comparison' | 'advanced'>('resmi');
   const [editedNews, setEditedNews] = useState<GeneratedNews | null>(news);
@@ -61,12 +62,16 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
 
   const applyHeadline = (newHeadline: string) => {
     if (!editedNews) return;
-    setEditedNews({ ...editedNews, headline: newHeadline });
+    const updated = { ...editedNews, headline: newHeadline };
+    setEditedNews(updated);
+    if(onNewsChange) onNewsChange(updated);
   };
 
   const applySpot = (newSpot: string) => {
     if (!editedNews) return;
-    setEditedNews({ ...editedNews, spot: newSpot });
+    const updated = { ...editedNews, spot: newSpot };
+    setEditedNews(updated);
+    if(onNewsChange) onNewsChange(updated);
   };
 
   const handleToggleRefineHeadline = async () => {
@@ -107,7 +112,9 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
     setRefineError(null);
     try {
       const refinedBody = await refineSubheadings(editedNews.body, selectedTone);
-      setEditedNews({ ...editedNews, body: refinedBody });
+      const updated = { ...editedNews, body: refinedBody };
+      setEditedNews(updated);
+      if(onNewsChange) onNewsChange(updated);
     } catch (err) {
       setRefineError("Ara başlık optimizasyonu başarısız oldu.");
     } finally {
@@ -117,14 +124,14 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
 
   if (isEmpty || !editedNews) {
     return (
-      <div className="bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 h-full flex items-center justify-center p-8 text-center shadow-lg shadow-zinc-200/50 dark:shadow-none">
-        <div className="max-w-xs opacity-40">
-          <Layers className="w-16 h-16 text-zinc-300 dark:text-zinc-700 mx-auto mb-6" />
-          <h3 className="text-base font-black text-zinc-900 dark:text-white mb-2 uppercase tracking-widest">VAKANÜVİS AI</h3>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium leading-relaxed">
-            Haberin dijital hafızası hazır. İçerik girişi yapın.
-          </p>
+      <div className="bg-[var(--paper)] rounded-3xl border border-[var(--border)] h-full flex flex-col items-center justify-center p-8 text-center shadow-xl shadow-zinc-200/50 dark:shadow-none min-h-[500px]">
+        <div className="w-16 h-16 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-[var(--border)] flex items-center justify-center mb-6">
+          <Layers className="w-8 h-8 text-zinc-300 dark:text-zinc-600" />
         </div>
+        <h3 className="text-sm font-black text-zinc-300 dark:text-zinc-600 mb-2 uppercase tracking-[0.2em]">VAKANÜVİS BEKLİYOR</h3>
+        <p className="text-zinc-400 dark:text-zinc-500 text-xs font-bold leading-relaxed max-w-[250px]">
+          İçerik girişi yaptığınızda haber metni burada oluşturulacaktır.
+        </p>
       </div>
     );
   }
@@ -151,7 +158,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
         
         return (
           <div key={index} className="mt-10 mb-6">
-            <h3 className="text-lg md:text-xl font-black text-zinc-900 dark:text-white font-sans tracking-tight border-l-4 border-indigo-600 pl-4 py-1 uppercase bg-zinc-50/50 dark:bg-zinc-800/30 rounded-r-lg">
+            <h3 className="text-lg md:text-xl font-black text-[var(--ink)] font-sans tracking-tight border-l-4 border-indigo-600 pl-4 py-1 uppercase bg-zinc-50/50 dark:bg-zinc-800/30 rounded-r-lg">
               {displayText}
             </h3>
           </div>
@@ -176,7 +183,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
       return (
         <p 
           key={index} 
-          className="mb-8 text-justify text-zinc-700 dark:text-zinc-300 leading-[1.8] text-lg md:text-xl font-serif antialiased tracking-tight"
+          className="mb-8 text-justify text-[var(--ink)] opacity-90 leading-[1.8] text-lg md:text-xl font-serif antialiased tracking-tight"
         >
           {line}
         </p>
@@ -199,19 +206,19 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl shadow-zinc-200/50 dark:shadow-none border border-zinc-100 dark:border-zinc-800 flex flex-col h-full overflow-hidden ring-1 ring-zinc-100 dark:ring-zinc-800">
+    <div className="bg-[var(--paper)] rounded-3xl shadow-xl shadow-zinc-200/50 dark:shadow-none border border-[var(--border)] flex flex-col h-full overflow-hidden ring-1 ring-[var(--border)]">
       
       {/* Top Nav */}
-      <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-4 pt-1">
-        <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap">
-          <button onClick={() => setActiveTab('resmi')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'resmi' ? 'border-zinc-900 dark:border-indigo-500 text-zinc-900 dark:text-indigo-500' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>📄 RESMİ HABER</button>
+      <div className="flex items-center justify-between border-b border-[var(--border)] bg-zinc-50/50 dark:bg-zinc-950/50 px-4 pt-1">
+        <div className="flex overflow-x-auto no-scrollbar whitespace-nowrap gap-6 pl-2">
+          <button onClick={() => setActiveTab('resmi')} className={`pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-[3px] transition-all flex-shrink-0 ${activeTab === 'resmi' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>📄 RESMİ HABER</button>
           {(editedNews?.metaTitle || editedNews?.seoClickPanel) && (
-            <button onClick={() => setActiveTab('seo_panel')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'seo_panel' ? 'border-zinc-900 dark:border-indigo-500 text-zinc-900 dark:text-indigo-500' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>📈 SEO & TIKLAMA PANELİ</button>
+            <button onClick={() => setActiveTab('seo_panel')} className={`pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-[3px] transition-all flex-shrink-0 ${activeTab === 'seo_panel' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>📈 SEO & TIKLAMA PANELİ</button>
           )}
           {editedNews?.comparison && (
-            <button onClick={() => setActiveTab('comparison')} className={`mr-6 pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'comparison' ? 'border-zinc-900 dark:border-indigo-500 text-zinc-900 dark:text-indigo-500' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>🔄 KARŞILAŞTIRMA</button>
+            <button onClick={() => setActiveTab('comparison')} className={`pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-[3px] transition-all flex-shrink-0 ${activeTab === 'comparison' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>🔄 KARŞILAŞTIRMA</button>
           )}
-          <button onClick={() => setActiveTab('advanced')} className={`pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-2 transition-all flex-shrink-0 ${activeTab === 'advanced' ? 'border-zinc-900 dark:border-indigo-500 text-zinc-900 dark:text-indigo-500' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>⚡ ANALİZ & DAĞITIM</button>
+          <button onClick={() => setActiveTab('advanced')} className={`pb-3 pt-3 text-[10px] font-black uppercase tracking-[0.2em] border-b-[3px] transition-all flex-shrink-0 ${activeTab === 'advanced' ? 'border-indigo-600 text-indigo-600 dark:border-indigo-500 dark:text-indigo-400' : 'border-transparent text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300'}`}>⚡ ANALİZ & DAĞITIM</button>
         </div>
         
         {editedNews && (
@@ -222,7 +229,7 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
             </div>
             <button 
               onClick={handleCopyFull}
-              className="flex items-center space-x-2 bg-zinc-900 dark:bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 dark:hover:bg-indigo-700 transition-all shadow-lg shadow-zinc-200 dark:shadow-none"
+              className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/20"
             >
               <Copy className="w-3.5 h-3.5" />
               <span>TÜMÜNÜ KOPYALA</span>
@@ -231,13 +238,13 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
         )}
       </div>
       
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-zinc-900 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto bg-[var(--paper)] custom-scrollbar">
         {activeTab === 'resmi' ? (
           <div className="p-0">
             <article className="max-w-4xl mx-auto px-8 md:px-12 py-12">
               
               {/* Toolbar */}
-              <div className="flex justify-between items-center mb-12 sticky top-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm z-10 py-4 border-b border-zinc-100 dark:border-zinc-800 transition-all">
+              <div className="flex justify-between items-center mb-12 sticky top-0 bg-[var(--paper)]/95 backdrop-blur-sm z-10 py-4 border-b border-[var(--border)] transition-all">
                 <div className="flex items-center space-x-2">
                    <span className="text-[10px] font-black bg-zinc-900 dark:bg-indigo-600 text-white px-3 py-1.5 rounded-full uppercase tracking-widest flex items-center">
                      <ShieldCheck className="w-3 h-3 mr-1.5" />
@@ -260,32 +267,32 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
 
               {/* Headline */}
               <div className="relative mb-14 group">
-                <div className="flex items-start justify-between mb-6">
+                <div className="flex items-start justify-between mb-8">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <span className="text-[10px] font-black bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-1 rounded uppercase tracking-widest">BAŞLIK</span>
+                    <div className="flex items-center space-x-2 mb-5">
+                      <span className="text-[10px] font-black bg-indigo-50 dark:bg-zinc-800 text-indigo-600 dark:text-zinc-300 px-2.5 py-1 rounded-md uppercase tracking-[0.2em] shadow-sm">BAŞLIK</span>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white leading-[1.1] tracking-tight font-sans text-balance">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-[var(--ink)] leading-[1.1] tracking-tight font-sans text-balance">
                       {editedNews.headline}
                     </h1>
                   </div>
                   <button 
                     onClick={() => handleCopyField(editedNews.headline, 'Başlık')}
-                    className="p-3 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all opacity-0 group-hover:opacity-100 flex-shrink-0 ml-4"
+                    className="p-4 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-zinc-800 rounded-2xl transition-all opacity-0 group-hover:opacity-100 flex-shrink-0 ml-6"
                     title="Başlığı Kopyala"
                   >
                     <Copy className="w-6 h-6" />
                   </button>
                 </div>
                 
-                <div className="flex items-center space-x-2 mb-8">
-                  <button onClick={handleToggleRefineHeadline} className="flex items-center space-x-1.5 text-indigo-600 hover:text-indigo-700 font-bold text-[9px] uppercase tracking-wider bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-all">
-                    {isRefiningHeadline ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Sparkles className="w-2.5 h-2.5" />}
+                <div className="flex items-center space-x-2 mb-10">
+                  <button onClick={handleToggleRefineHeadline} className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-bold text-[10px] uppercase tracking-[0.1em] bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-4 py-2 rounded-full transition-all border border-indigo-100/50 dark:border-indigo-800/50">
+                    {isRefiningHeadline ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     <span>Başlığı Güçlendir</span>
                   </button>
                   {editedNews.qualityAudit && (
-                    <div className="text-[9px] font-medium text-zinc-400 bg-zinc-50 px-2.5 py-1.5 rounded-full border border-zinc-100">
-                      ÖZGÜNLÜK: <span className="text-zinc-900 font-black">%{editedNews.qualityAudit.originalityScore}</span>
+                    <div className="text-[10px] font-medium text-zinc-500 bg-zinc-50 dark:bg-zinc-800/50 px-3 py-2 rounded-full border border-zinc-100 dark:border-zinc-800">
+                      ÖZGÜNLÜK: <span className="text-zinc-900 dark:text-zinc-100 font-black">%{editedNews.qualityAudit.originalityScore}</span>
                     </div>
                   )}
                 </div>
@@ -337,48 +344,48 @@ export const OutputSection: React.FC<OutputSectionProps> = ({ news, isEmpty, onA
               <div className="mb-16 relative group">
                  <div className="relative">
                    <div className="flex items-center space-x-2 mb-6">
-                      <span className="text-[10px] font-black bg-zinc-100 dark:bg-zinc-800 text-zinc-500 px-2 py-1 rounded uppercase tracking-widest">SPOT</span>
+                      <span className="text-[10px] font-black bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 px-2.5 py-1 rounded-md uppercase tracking-[0.2em]">SPOT</span>
                     </div>
-                   <div className="text-2xl md:text-3xl font-medium leading-[1.6] text-zinc-700 dark:text-zinc-300 font-serif border-l-[4px] border-zinc-900 dark:border-indigo-500 pl-8 py-2 text-justify">
+                   <div className="text-2xl md:text-3xl font-medium leading-[1.6] text-[var(--ink)] font-serif border-l-[4px] border-[var(--ink)] pl-8 py-2 text-justify opacity-90">
                       {editedNews.spot}
                    </div>
                    <button 
                       onClick={() => handleCopyField(editedNews.spot, 'Spot')}
-                      className="absolute top-12 right-4 p-2 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                      className="absolute top-12 right-4 p-3 text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-zinc-800 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                       title="Spotu Kopyala"
                     >
                       <Copy className="w-5 h-5" />
                     </button>
                  </div>
                  
-                 <div className="mt-5 flex items-center">
-                    <button onClick={handleToggleRefineSpot} className="flex items-center space-x-1.5 text-zinc-400 hover:text-indigo-600 font-black text-[9px] uppercase tracking-[0.15em] transition-all hover:bg-zinc-50 px-3 py-1.5 rounded-full border border-transparent hover:border-zinc-100">
-                      {isRefiningSpot ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <RefreshCw className="w-2.5 h-2.5" />}
+                 <div className="mt-6 flex items-center">
+                    <button onClick={handleToggleRefineSpot} className="flex items-center space-x-2 text-zinc-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-black text-[10px] uppercase tracking-[0.1em] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/50 px-4 py-2 rounded-full border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700">
+                      {isRefiningSpot ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                       <span>Spot Metnini Optimize Et</span>
                     </button>
                  </div>
               </div>
 
               {/* Body */}
-              <div className="news-content-area select-text text-zinc-800 dark:text-zinc-200 relative group/body px-0 md:px-0">
-                <div className="mb-8 flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 pb-4">
+              <div className="news-content-area select-text text-[var(--ink)] relative group/body px-0 md:px-0">
+                <div className="mb-10 flex justify-between items-center border-b border-[var(--border)] pb-5">
                   <button 
                     onClick={() => handleCopyField(editedNews.body, 'Haber Metni')}
-                    className="flex items-center space-x-2 text-zinc-400 hover:text-indigo-600 font-black text-[9px] uppercase tracking-[0.15em] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800 px-3 py-1.5 rounded-full border border-transparent hover:border-zinc-100 dark:hover:border-zinc-700"
+                    className="flex items-center space-x-2 text-[var(--muted)] hover:text-indigo-600 dark:hover:text-indigo-400 font-black text-[10px] uppercase tracking-[0.1em] transition-all hover:bg-zinc-50 dark:hover:bg-zinc-800/50 px-4 py-2 rounded-full border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700"
                   >
-                    <Copy className="w-3 h-3" />
+                    <Copy className="w-3.5 h-3.5" />
                     <span>Metni Kopyala</span>
                   </button>
                   <button 
                     onClick={handleOptimizeSubheadings} 
                     disabled={isRefiningSubheadings}
-                    className="flex items-center space-x-1.5 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 font-black text-[9px] uppercase tracking-[0.15em] transition-all bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-3 py-1.5 rounded-full border border-indigo-100 dark:border-indigo-900/50 disabled:opacity-50"
+                    className="flex items-center space-x-2 text-indigo-700 dark:text-indigo-300 hover:text-indigo-800 dark:hover:text-indigo-200 font-black text-[10px] uppercase tracking-[0.1em] transition-all bg-indigo-50/80 dark:bg-indigo-900/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 px-4 py-2 rounded-full border border-indigo-200/50 dark:border-indigo-800/80 disabled:opacity-50"
                   >
-                    {isRefiningSubheadings ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <AlignLeft className="w-2.5 h-2.5" />}
+                    {isRefiningSubheadings ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlignLeft className="w-3.5 h-3.5" />}
                     <span>Ara Başlıkları SEO Uyumlu Güçlendir</span>
                   </button>
                 </div>
-                <div className="text-xl md:text-2xl leading-[1.8] text-zinc-800 dark:text-zinc-200 font-serif text-justify space-y-8 selection:bg-indigo-100 selection:text-indigo-900">
+                <div className="text-xl md:text-[1.35rem] leading-[1.8] text-[var(--ink)] opacity-90 font-serif text-justify space-y-8 selection:bg-indigo-200 selection:text-indigo-900 dark:selection:bg-indigo-900/50 dark:selection:text-indigo-100">
                    {renderBody(editedNews.body)}
                 </div>
               </div>

@@ -7,7 +7,7 @@ import { buildPrompt } from "../prompts/promptBuilder";
 const getAiClient = (forceFree = false) => {
   // In AI Studio Build, GEMINI_API_KEY is the standard for the user's project
   // We check for both but prefer GEMINI_API_KEY as primary.
-  const apiKey = (process.env.GEMINI_API_KEY || process.env.API_KEY || '');
+  const apiKey = (typeof process !== 'undefined' ? (process.env.GEMINI_API_KEY || process.env.API_KEY) : '') || '';
   return new GoogleGenAI({ apiKey });
 };
 
@@ -432,7 +432,7 @@ export const generateNewsContent = async (rawText: string, mode: NewsMode, tone:
     if (!disableSearch) {
       config.tools = [{ googleSearch: {} }];
       // Enable server side tool invocations for tool hybrid mode (required for some Gemini 3 configs)
-      config.includeServerSideToolInvocations = true;
+      config.toolConfig = { includeServerSideToolInvocations: true };
     }
 
     const response = await ai.models.generateContent({

@@ -101,34 +101,34 @@ export const InputSection: React.FC<InputSectionProps> = ({
   const wordCount = useMemo(() => value.trim() ? value.trim().split(/\s+/).length : 0, [value]);
 
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-xl shadow-zinc-200/50 dark:shadow-none border border-zinc-200 dark:border-zinc-800 flex flex-col h-full overflow-hidden transition-all duration-300">
+    <div className="bg-[var(--paper)] rounded-3xl shadow-xl shadow-zinc-200/50 dark:shadow-none border border-[var(--border)] flex flex-col h-full overflow-hidden transition-all duration-300">
       
       {/* Header Area */}
-      <div className="p-5 px-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-zinc-900 dark:bg-indigo-600 flex items-center justify-center shadow-lg">
-            <Feather className="w-5 h-5 text-white" />
+      <div className="p-6 border-b border-[var(--border)] flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950/50">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-500/30">
+            <Feather className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col">
-            <h2 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em]">Editör Masası</h2>
-            <span className="text-xs font-bold text-zinc-900 dark:text-white">VAKANÜVİS KONTROL PANELİ</span>
+            <h2 className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em]">Editör Masası</h2>
+            <span className="text-sm font-black text-[var(--ink)] tracking-tight">VAKANÜVİS KONTROL PANELİ</span>
           </div>
         </div>
         <button 
           onClick={onClear} 
-          className="p-2.5 rounded-xl text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all border border-transparent hover:border-rose-100" 
+          className="p-3 rounded-2xl text-zinc-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all border border-transparent hover:border-rose-100 dark:border-zinc-800" 
           title="Tümünü Temizle ve Sıfırla" 
           disabled={isLoading}
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-5 h-5" />
         </button>
       </div>
 
       {/* Config Area */}
       <div className="p-6 pb-4 bg-gradient-to-b from-white to-zinc-50/50 dark:from-zinc-900 dark:to-zinc-900 space-y-6 overflow-y-auto custom-scrollbar">
         <div>
-          <label className="flex items-center space-x-2 text-[11px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3">
-             <Hash className="w-3 h-3" />
+          <label className="flex items-center gap-3 text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">
+             <Hash className="w-3.5 h-3.5" />
              <span>Haber Kategorisi</span>
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-2">
@@ -137,7 +137,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                 key={mode}
                 onClick={() => onModeChange(mode)}
                 disabled={isLoading}
-                className={`px-2 py-2 rounded-lg text-[10px] font-bold transition-all border text-center truncate ${selectedMode === mode ? 'bg-zinc-800 dark:bg-indigo-600 text-white border-zinc-800 dark:border-indigo-600 shadow-lg' : 'bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}
+                className={`px-3 py-3 rounded-xl text-[10px] font-black transition-all border text-center truncate ${selectedMode === mode ? 'bg-indigo-600 text-white border-indigo-600 shadow-xl shadow-indigo-600/20' : 'bg-[var(--paper)] text-[var(--muted)] border-[var(--border)] hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-zinc-700'}`}
                 title={mode}
               >
                 {mode}
@@ -147,8 +147,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
         </div>
 
         <div>
-          <label className="flex items-center space-x-2 text-[11px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3">
-            <MessageSquare className="w-3 h-3" />
+          <label className="flex items-center gap-3 text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-4">
+            <MessageSquare className="w-3.5 h-3.5" />
             <span>Ton & Üslup</span>
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -157,7 +157,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                 key={tone}
                 onClick={() => onToneChange(tone)}
                 disabled={isLoading}
-                className={`px-3 py-2 rounded-lg text-[10px] font-bold transition-all border text-center ${selectedTone === tone ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200' : 'bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-zinc-700 hover:bg-indigo-50 dark:hover:bg-zinc-700'}`}
+                className={`px-4 py-3 rounded-xl text-[10px] font-black transition-all border text-center ${selectedTone === tone ? 'bg-zinc-900 dark:bg-indigo-600 text-white border-zinc-900 dark:border-indigo-600 shadow-lg' : 'bg-white dark:bg-zinc-800 text-zinc-600 dark:text-indigo-400 border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700'}`}
               >
                 {tone}
               </button>
@@ -312,11 +312,11 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </div>
       
       {/* Text Area */}
-      <div className="flex-1 p-8 relative group bg-white dark:bg-zinc-900 flex flex-col border-t border-zinc-200 dark:border-zinc-800 min-h-[400px]">
+      <div className="flex-1 p-8 relative group bg-[var(--paper)] flex flex-col border-t border-[var(--border)] min-h-[400px]">
         <div className="absolute top-6 right-6 z-10 flex space-x-2">
            <button
              onClick={toggleListening}
-             className={`p-3 rounded-2xl transition-all shadow-xl border ${isListening ? 'bg-rose-500 text-white border-rose-600 animate-pulse' : 'bg-white dark:bg-zinc-800 text-zinc-400 hover:text-indigo-600 border-zinc-200 dark:border-zinc-700 hover:scale-110 active:scale-95'}`}
+             className={`p-3 rounded-2xl transition-all shadow-xl border ${isListening ? 'bg-rose-500 text-white border-rose-600 animate-pulse' : 'bg-[var(--paper)] text-[var(--muted)] hover:text-indigo-600 border-[var(--border)] hover:scale-110 active:scale-95'}`}
              title={isListening ? 'Dinlemeyi Durdur' : 'Sesli Giriş'}
            >
              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -326,7 +326,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Vakanüvis için haber notlarını, ajans metnini veya ham verileri buraya yapıştırın..."
-          className="flex-1 w-full resize-none outline-none text-zinc-800 dark:text-zinc-200 placeholder-zinc-300 dark:placeholder-zinc-600 text-xl leading-[1.8] bg-transparent font-serif custom-scrollbar"
+          className="flex-1 w-full resize-none outline-none text-[var(--ink)] placeholder-zinc-300 dark:placeholder-zinc-600 text-xl leading-[1.8] bg-transparent font-serif custom-scrollbar"
           disabled={isLoading}
         />
         

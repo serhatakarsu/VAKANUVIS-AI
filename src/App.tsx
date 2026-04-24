@@ -330,7 +330,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-blue-100 selection:text-blue-900 transition-colors duration-300">
+    <div className="min-h-screen bg-[var(--paper)] flex flex-col font-sans text-[var(--ink)] selection:bg-indigo-100 selection:text-indigo-900 transition-colors duration-300">
       <Header onOpenHistory={() => setIsHistoryOpen(true)} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} />
       
       {isKeyMissing && (
@@ -348,7 +348,7 @@ function App() {
 
       <HistoryDrawer isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} items={historyItems} onRestore={handleRestore} onDeleteForever={handleDeleteForever} />
       
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
         
       {errorMessage && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[60] w-full max-w-2xl animate-in slide-in-from-top-4 duration-500">
@@ -383,7 +383,7 @@ function App() {
         {/* Loading Overlay */}
         {appState === AppState.LOADING && (
           <div className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center animate-in fade-in duration-300">
-             <div className="w-full max-w-md p-10 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-center shadow-2xl transform transition-all">
+             <div className="w-full max-w-md p-10 bg-[var(--paper)] rounded-3xl border border-[var(--border)] text-center shadow-2xl transform transition-all">
                 <div className="relative w-20 h-20 mx-auto mb-8">
                   <div className="absolute inset-0 border-4 border-blue-100 dark:border-slate-800 rounded-full"></div>
                   <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
@@ -428,6 +428,7 @@ function App() {
           <div className="lg:col-span-7 h-full min-h-[600px] lg:min-h-0">
             <OutputSection 
               news={generatedNews} 
+              onNewsChange={(updatedNews) => setGeneratedNews(updatedNews)}
               isEmpty={!generatedNews} 
               onArchive={handleArchive} 
               selectedTone={newsConfig.tone} 
@@ -436,15 +437,15 @@ function App() {
         </div>
       </main>
       
-      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-12 transition-colors">
+      <footer className="bg-[var(--paper)] border-t border-[var(--border)] py-12 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-blue-600 flex items-center justify-center">
-                  <Feather className="w-4 h-4 text-white" />
+                <div className="flex items-center space-x-3 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-[var(--ink)] flex items-center justify-center">
+                  <Feather className="w-4 h-4 text-[var(--paper)]" />
                 </div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white tracking-widest uppercase">Vakanüvis AI v3.0 PRO</h2>
+                <h2 className="text-lg font-bold text-[var(--ink)] tracking-widest uppercase">Vakanüvis AI v3.0 PRO</h2>
               </div>
               <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed font-medium italic">
                 "Vakanüvis, bin yıllık yazım geleneğini yapay zekanın hızıyla birleştiren profesyonel bir dijital editördür."
